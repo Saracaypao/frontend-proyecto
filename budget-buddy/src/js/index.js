@@ -12,6 +12,8 @@ import chart03 from "./components/charts/chart-03";
 import chart01 from "./components/charts/chart-01";
 import { renderTransactionTable } from "./components/table-01";
 import { renderFinancialTable } from "./components/table-02.js";
+import { transactions } from './components/table-01';
+//import { financialData } from "./components/table-02.js";
 import "./components/calendar-init.js";
 import "./components/image-resize";
 
@@ -53,8 +55,10 @@ if (dropzoneArea.length) {
 document.addEventListener("DOMContentLoaded", () => {
   chart03();
   chart01();
-  renderTransactionTable();
+  //renderTransactionTable();
+  renderTransactionTable(transactions);
   renderFinancialTable();
+  //renderFinancialTable(financialData);
   //map01();
 });
 

@@ -6,13 +6,13 @@
   >
     <div>
       <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-        Last Transactions
+        Latest Transactions
       </h3>
     </div>
 
-    <div class="flex items-center gap-3">
-      <button
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+    <div class="flex items-center gap-3 relative">
+      <button @click="showFiltersSmall = true"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
       >
         <svg
           class="stroke-current fill-white dark:fill-gray-800"
@@ -53,16 +53,12 @@
         Filter
       </button>
 
-      <button
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      >
-        See all
-      </button>
-      
+      <include src="../transaction-modal/filters-small-modal.html"></include>
+
     </div>
   </div>
 
-  <div class="w-full overflow-x-auto">
+  <div class="w-full min-h-[23rem] flex flex-col justify-between">
     <table class="min-w-full">
       <!-- table header -->
       <thead>
@@ -88,5 +84,6 @@
         <!-- injecting data -->
       </tbody>
     </table>
+   <div id="financial-pagination" class="flex justify-center gap-2 -mt-20 text-sm text-gray-700 dark:text-white"></div>
   </div>
 </div>
