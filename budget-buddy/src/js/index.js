@@ -14,6 +14,9 @@ import { renderTransactionTable } from "./components/table-01";
 import { renderFinancialTable } from "./components/table-02.js";
 import { transactions } from './components/table-01';
 //import { financialData } from "./components/table-02.js";
+import loadSigninPage from "./pages/signIn";
+import loadSignupPage from "./pages/signUp";
+import loadLandingPage from "./pages/landing";
 import "./components/calendar-init.js";
 import "./components/image-resize";
 
@@ -50,6 +53,25 @@ const dropzoneArea = document.querySelectorAll("#demo-upload");
 if (dropzoneArea.length) {
   let myDropzone = new Dropzone("#demo-upload", { url: "/file/post" });
 }
+
+// Load Signin and Signup pages
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page === "signin") {
+    loadSigninPage();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page === "signup") {
+    loadSignupPage();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page === "landing") {
+    loadLandingPage();
+  }
+});
 
 // Document Loaded
 document.addEventListener("DOMContentLoaded", () => {
@@ -96,6 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("search-input");
   const searchButton = document.getElementById("search-button");
+
+  if (!searchInput || !searchButton) return; // Prevent error if not present
 
   // Function to focus the search input
   function focusSearchInput() {
