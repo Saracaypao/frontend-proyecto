@@ -19,8 +19,8 @@
     </div>
 
     <div>
-      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-      <select x-model="filters.type"
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Visibility</label>
+      <select x-model="filters.visibility"
               class="w-full mt-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
         <option value="">All</option>
         <option value="Private">Private</option>
@@ -34,7 +34,7 @@
         Cancel
       </button>
       
-      <button @click="filters = { category: '', date: '', type: '' }; renderTransactionTable(window.transactions); showFilters = false"
+      <button @click="filters = { category: '', date: '', visibility: '' }; renderTransactionTable(window.transactions); showFilters = false"
             class="px-4 py-2 rounded-lg bg-[#6495ED] text-sm font-medium text-white hover:bg-[#99b8f2] dark:bg-[#6495ED] dark:text-white dark:hover:bg-[#5485de]">
         Reset
       </button>

@@ -1,102 +1,21 @@
 // dummy data for transactions
 export const transactions = [
-  {
-    tittle: "Macbook Pro 13”",
-    description: "Bought a new laptop",
-    category: "Laptop",
-    classification: "Expense",
-    date: "2024/03/31",
-    type: "Private",
-    amount: "$2399.00",
-  },
-  {
-    tittle: "Spotify Subscription",
-    description: "Monthly music plan",
-    category: "Entertainment",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$9.99",
-  },
-  {
-    tittle: "Apple Watch Ultra",
-    description: "Bought a new smartwatch",
-    category: "Watch",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$879.00",
-  },
-  {
-    tittle: "iPhone 15 Pro Max",
-    description: "Bought mom a new phone",
-    category: "Phone",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Private",
-    amount: "$1869.00",
-  },
-    {
-    tittle: "AirPods Pro 2nd Gen",
-    description: "Bought new wireless earbuds",
-    category: "Earbuds",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$240.00",
-  },
-    {
-    tittle: "Macbook Pro 11”",
-    description: "Bought a new laptop",
-    category: "Laptop",
-    classification: "Expense",
-    date: "2024/05/31",
-    type: "Private",
-    amount: "$2399.00",
-  },
-  {
-    tittle: "Spotify",
-    description: "Monthly music plan",
-    category: "Entertainment",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$9.99",
-  },
-  {
-    tittle: "Apple Watch",
-    description: "Bought a new smartwatch",
-    category: "Watch",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$879.00",
-  },
-  {
-    tittle: "iPhone 13 Pro Max",
-    description: "Bought mom a new phone",
-    category: "Phone",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Private",
-    amount: "$1869.00",
-  },
-    {
-    tittle: "AirPods Pro 3nd Gen",
-    description: "Bought new wireless earbuds",
-    category: "Earbuds",
-    classification: "Expense",
-    date: "2024/04/01",
-    type: "Public",
-    amount: "$240.00",
-  }
-
+  { description: "Bought a new laptop", category: "Laptop", type: "Expense", date: "2024-03-31", visibility: "Private", amount: "$2399.00" },
+  { description: "Monthly music plan", category: "Entertainment", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$9.99" },
+  { description: "Bought a new smartwatch", category: "Watch", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$879.00" },
+  { description: "Bought mom a new phone", category: "Phone", type: "Expense", date: "2024-04-01", visibility: "Private", amount: "$1869.00" },
+  { description: "Bought new wireless earbuds", category: "Earbuds", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$240.00" },
+  { description: "Bought a new laptop", category: "Laptop", type: "Expense", date: "2024-05-31", visibility: "Private", amount: "$2399.00" },
+  { description: "Monthly music plan", category: "Entertainment", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$9.99" },
+  { description: "Bought a new smartwatch", category: "Watch", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$879.00" },
+  { description: "Bought mom a new phone", category: "Phone", type: "Expense", date: "2024-04-01", visibility: "Private", amount: "$1869.00" },
+  { description: "Bought new wireless earbuds", category: "Earbuds", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$240.00" },
 ];
 
 // function that generates table rows for transactions
 function generateTransactionRow(tx, index) {
   const typeClass =
-    tx.type === "Private"
+    tx.visibility === "Private"
       ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
       : "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-500";
 
@@ -104,9 +23,6 @@ function generateTransactionRow(tx, index) {
     <tr class="relative group">
       <td class="py-3">
         <div>
-          <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-            ${tx.tittle}
-          </p>
           <span class="text-gray-500 text-theme-xs dark:text-gray-400">
             ${tx.description}
           </span>
@@ -116,14 +32,14 @@ function generateTransactionRow(tx, index) {
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.category}</p>
       </td>
       <td class="py-3">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.classification}</p>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.type}</p>
       </td>
       <td class="py-3">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.date}</p>
       </td>
       <td class="py-3">
         <p class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${typeClass}">
-          ${tx.type}
+          ${tx.visibility}
         </p>
       </td>
       <td class="py-3 flex items-center justify-between gap-2">

@@ -10,9 +10,10 @@ import Dropzone from "dropzone";
 
 import chart03 from "./components/charts/chart-03";
 import chart01 from "./components/charts/chart-01";
+import { loadCurrentMonthMetrics } from "./components/dashboard-metrics";
 import { renderTransactionTable } from "./components/table-01";
+import transactionsComponent from "./pages/transactions.js";
 import { renderFinancialTable } from "./components/table-02.js";
-import { transactions } from './components/table-01';
 //import { financialData } from "./components/table-02.js";
 import loadSigninPage from "./pages/signIn";
 import loadSignupPage from "./pages/signUp";
@@ -73,12 +74,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Load Dashboard metrics and charts
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page === "dashboard") {
+    loadCurrentMonthMetrics();
+    chart01();
+  }
+});
+
+// Load Dashboard metrics and charts
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page === "transactions") {
+    renderTransactionTable();
+  }
+});
+
+// Registramos el componente de Alpine
+document.addEventListener('alpine:init', () => {
+  Alpine.data('transactionsComponent', transactionsComponent);
+});
+
 // Document Loaded
 document.addEventListener("DOMContentLoaded", () => {
   chart03();
-  chart01();
+  //chart01();
   //renderTransactionTable();
-  renderTransactionTable(transactions);
+  //renderTransactionTable();
   renderFinancialTable();
   //renderFinancialTable(financialData);
   //map01();

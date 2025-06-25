@@ -16,18 +16,18 @@
     data-page="transactions"
     x-data="{
           page: 'transactions',loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false, scrollTop: false, isTransactionModal: false,
-          newTransaction: { description: '', category: '', date: '', type: '', amount: '' }, transactions: [],
-          filters: { category: '', date: '', type: '' }, showFilters: false, filteredTransactions: [],
+          newTransaction: { description: '', category: '', date: '', visibility: '', amount: '' }, transactions: [],
+          filters: { category: '', date: '', visibility: '' }, showFilters: false, filteredTransactions: [],
           addTransaction() {
           this.transactions.push({ ...this.newTransaction });
-          this.newTransaction = { description: '', category: '', date: '', type: '', amount: '' };
+          this.newTransaction = { description: '', category: '', date: '', visibility: '', amount: '' };
           this.isTransactionModal = false;
         },
           applyFilters() {
             this.filteredTransactions = window.transactions.filter(tx =>
             (this.filters.category === '' || tx.category.toLowerCase().includes(this.filters.category.toLowerCase())) &&
             (this.filters.date === '' || tx.date === this.filters.date) &&
-            (this.filters.type === '' || tx.type === this.filters.type)
+            (this.filters.visibility === '' || tx.visibility === this.filters.visibility)
           );
           renderTransactionTable(this.filteredTransactions, 1);
           this.showFilters = false;

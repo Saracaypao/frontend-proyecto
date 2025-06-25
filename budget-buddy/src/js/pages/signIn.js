@@ -4,7 +4,7 @@ export default function loadSigninPage() {
   const root = document.getElementById("signin-root");
   if (!root) return;
 
-  // local states
+  // local state for toggling password visibility
   let showPassword = false;
 
   root.innerHTML = `
@@ -151,58 +151,62 @@ export default function loadSigninPage() {
 </div>
 `;
 
-  // events logic
-  const togglePasswordBtn = document.getElementById("togglePassword");
-  const passwordInput = document.getElementById("password");
-  const eyeOpenIcon = document.getElementById("eyeOpenIcon");
-  const eyeCloseIcon = document.getElementById("eyeCloseIcon");
+  // Toggle password visibility
+  const toggleBtn = document.getElementById("togglePassword");
+  const pwdInput  = document.getElementById("password");
+  const eyeOpen   = document.getElementById("eyeOpenIcon");
+  const eyeClose  = document.getElementById("eyeCloseIcon");
 
-  if (togglePasswordBtn) {
-    togglePasswordBtn.addEventListener("click", () => {
-      showPassword = !showPassword;
-      passwordInput.type = showPassword ? "text" : "password";
-      eyeOpenIcon.classList.toggle("hidden");
-      eyeCloseIcon.classList.toggle("hidden");
-    });
-  }
+  toggleBtn?.addEventListener("click", () => {
+    showPassword = !showPassword;
+    pwdInput.type = showPassword ? "text" : "password";
+    eyeOpen.classList.toggle("hidden");
+    eyeClose.classList.toggle("hidden");
+  });
 
-  // theme toggle
-  const themeToggle = document.getElementById("themeToggle");
-  const sunIcon = document.getElementById("sunIcon");
-  const moonIcon = document.getElementById("moonIcon");
-
-  let darkMode = localStorage.getItem("darkMode") === "true";
-
-  if (darkMode) {
-    document.documentElement.classList.add("dark");
-    sunIcon.classList.remove("hidden");
-    moonIcon.classList.add("hidden");
-  } else {
-    document.documentElement.classList.remove("dark");
-    sunIcon.classList.add("hidden");
-    moonIcon.classList.remove("hidden");
-  }
-
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      darkMode = !darkMode;
-      document.documentElement.classList.toggle("dark", darkMode);
-      sunIcon.classList.toggle("hidden");
-      moonIcon.classList.toggle("hidden");
-      localStorage.setItem("darkMode", darkMode);
-    });
-  }
-
-  // submit
+  // Handle form submit
   const signinForm = document.getElementById("signin-form");
-  if (signinForm) {
-    signinForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+  signinForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email    = document.getElementById("email").value;
+    const password = pwdInput.value;
 
-      console.log("Signing in with:", { email, password });
-      alert("Aquí iría la lógica real de autenticación.");
-    });
-  }
+    try {
+      const res = await fetch("http://localhost:8080/auth/login", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json(); // { id, fullName, email, role, token }
+        localStorage.setItem("jwtToken", data.token);
+        window.location.href = "/index.html";
+      } else {
+        const msg = await res.text();
+        alert(`Login failed (${res.status}): ${msg}`);
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("No se pudo conectar al servidor.");
+    }
+  });
+
+  // theme toggle button
+  const themeToggle = document.getElementById("themeToggle");
+  const sunIcon     = document.getElementById("sunIcon");
+  const moonIcon    = document.getElementById("moonIcon");
+  let darkMode      = localStorage.getItem("darkMode") === "true";
+
+  const applyTheme = () => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    sunIcon.classList.toggle("hidden", !darkMode);
+    moonIcon.classList.toggle("hidden",  darkMode);
+  };
+  applyTheme();
+  themeToggle?.addEventListener("click", () => {
+    darkMode = !darkMode;
+    localStorage.setItem("darkMode", darkMode);
+    applyTheme();
+  });
 }

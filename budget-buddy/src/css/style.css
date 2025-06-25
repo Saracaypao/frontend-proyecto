@@ -331,6 +331,38 @@ input[type="email"] {
   caret-color: #60a5fa;
 }
 
+/* First name input*/
+input[type="firstName"] {
+  /* tailwind styles priority*/
+  @apply h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30;
+}
+
+/* forcing styles in dark mode*/
+.dark input[type="firstName"]:-webkit-autofill,
+.dark input[type="firstName"]:-webkit-autofill:hover,
+.dark input[type="firstName"]:-webkit-autofill:focus,
+.dark input[type="firstName"]:-webkit-autofill:active,
+.dark input[type="firstName"]:-webkit-autofill:valid {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+  caret-color: #60a5fa;
+}
+
+/* Last name input*/
+input[type="lastName"] {
+  /* tailwind styles priority*/
+  @apply h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30;
+}
+
+/* forcing styles in dark mode*/
+.dark input[type="lastName"]:-webkit-autofill,
+.dark input[type="lastName"]:-webkit-autofill:hover,
+.dark input[type="lastName"]:-webkit-autofill:focus,
+.dark input[type="lastName"]:-webkit-autofill:active,
+.dark input[type="lastName"]:-webkit-autofill:valid {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+  caret-color: #60a5fa;
+}
+
 .sidebar:hover {
   width: 290px;
 }

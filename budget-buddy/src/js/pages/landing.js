@@ -1,4 +1,4 @@
-import "../../css/style.css";
+//import "../../css/style.css";
 
 export default function loadLandingPage() {
   const root = document.getElementById("landing-root");

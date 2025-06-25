@@ -7,7 +7,7 @@ export default function loadSignupPage() {
   // local states
   let showPassword = false;
 
-  root.innerHTML = `
+root.innerHTML = `
 <div class="flex flex-col md:flex-row w-full h-screen overflow-hidden">
   <!-- left column with Sign Up form -->
   <div class="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4 overflow-y-auto pt-6">
@@ -49,8 +49,8 @@ export default function loadSignupPage() {
               name="firstName"
               placeholder="Enter your first name"
               required
-              class="h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
-              autocomplete="given-name"
+              class="firstName-input h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
+              autocomplete="firstName"
             />
           </div>
           
@@ -65,8 +65,8 @@ export default function loadSignupPage() {
               name="lastName"
               placeholder="Enter your last name"
               required
-              class="h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
-              autocomplete="family-name"
+              class="lastName-input h-11 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300 dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
+              autocomplete="last-name"
             />
           </div>
         </div>
@@ -217,101 +217,86 @@ export default function loadSignupPage() {
 </div>
 `;
 
-  // events logic
-  const togglePasswordBtn = document.getElementById("togglePassword");
-  const passwordInput = document.getElementById("password");
-  const eyeOpenIcon = document.getElementById("eyeOpenIcon");
-  const eyeCloseIcon = document.getElementById("eyeCloseIcon");
-
-  if (togglePasswordBtn) {
-    togglePasswordBtn.addEventListener("click", () => {
+  // toggle password visibility
+  const toggle = (btnId, inputId, openIconId, closeIconId) => {
+    const btn   = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    const open  = document.getElementById(openIconId);
+    const close = document.getElementById(closeIconId);
+    btn?.addEventListener("click", () => {
       showPassword = !showPassword;
-      passwordInput.type = showPassword ? "text" : "password";
-      eyeOpenIcon.classList.toggle("hidden");
-      eyeCloseIcon.classList.toggle("hidden");
+      input.type   = showPassword ? "text" : "password";
+      open.classList.toggle("hidden");
+      close.classList.toggle("hidden");
     });
-  }
+  };
+  toggle("togglePassword",        "password",         "eyeOpenIcon",        "eyeCloseIcon");
+  toggle("toggleConfirmPassword", "confirmPassword",  "eyeOpenIconConfirm", "eyeCloseIconConfirm");
 
-  // theme toggle
-  const themeToggle = document.getElementById("themeToggle");
-  const sunIcon = document.getElementById("sunIcon");
-  const moonIcon = document.getElementById("moonIcon");
-
-  let darkMode = localStorage.getItem("darkMode") === "true";
-
-  if (darkMode) {
-    document.documentElement.classList.add("dark");
-    sunIcon.classList.remove("hidden");
-    moonIcon.classList.add("hidden");
-  } else {
-    document.documentElement.classList.remove("dark");
-    sunIcon.classList.add("hidden");
-    moonIcon.classList.remove("hidden");
-  }
-
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      darkMode = !darkMode;
-      document.documentElement.classList.toggle("dark", darkMode);
-      sunIcon.classList.toggle("hidden");
-      moonIcon.classList.toggle("hidden");
-      localStorage.setItem("darkMode", darkMode);
-    });
-  }
-
-    // toggle confirm password visibility
-  const toggleConfirmPasswordBtn = document.getElementById("toggleConfirmPassword");
-  const confirmPasswordInput = document.getElementById("confirmPassword");
-  const eyeOpenIconConfirm = document.getElementById("eyeOpenIconConfirm");
-  const eyeCloseIconConfirm = document.getElementById("eyeCloseIconConfirm");
-
-  if (toggleConfirmPasswordBtn) {
-    toggleConfirmPasswordBtn.addEventListener("click", () => {
-      showPassword = !showPassword;
-      confirmPasswordInput.type = showPassword ? "text" : "password";
-      eyeOpenIconConfirm.classList.toggle("hidden");
-      eyeCloseIconConfirm.classList.toggle("hidden");
-    });
-  }
-
-  // validating password match
+  // validate password match
   const passwordMatchError = document.getElementById("passwordMatchError");
-  
   function validatePasswordMatch() {
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    
-    if (password && confirmPassword && password !== confirmPassword) {
+    const pwd  = document.getElementById("password").value;
+    const cpwd = document.getElementById("confirmPassword").value;
+    if (pwd && cpwd && pwd !== cpwd) {
       passwordMatchError.classList.remove("hidden");
       return false;
-    } else {
-      passwordMatchError.classList.add("hidden");
-      return true;
     }
+    passwordMatchError.classList.add("hidden");
+    return true;
   }
-
-  // event listeners for password match validation
   document.getElementById("password")?.addEventListener("input", validatePasswordMatch);
   document.getElementById("confirmPassword")?.addEventListener("input", validatePasswordMatch);
 
-  // submit
-  const signupForm = document.getElementById("signup-form");
-  if (signupForm) {
-    signupForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      
-      if (!validatePasswordMatch()) {
-        return;
-      }
-      
-      const firstName = document.getElementById("firstName").value;
-      const lastName = document.getElementById("lastName").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+  // submit form and backend request
+const signupForm = document.getElementById("signup-form");
+signupForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!validatePasswordMatch()) return;
 
-      console.log("Signing up with:", { firstName, lastName, email, password });
-      alert("Registration successful!");
+  const payload = {
+    firstName: document.getElementById("firstName").value,
+    lastName:  document.getElementById("lastName").value,
+    email:     document.getElementById("email").value,
+    password:  document.getElementById("password").value,
+  };
+
+  try {
+
+    const res = await fetch("http://localhost:8080/users/register", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
     });
-  }
 
+    if (res.ok) {
+      // redirige al login
+      window.location.href = "/signin.html";
+    } else {
+      const text = await res.text();
+      alert(`Error ${res.status}: ${text}`);
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("No se pudo conectar al servidor.");
+  }
+});
+
+  // theme toggle button
+  const themeToggle = document.getElementById("themeToggle");
+  const sunIcon     = document.getElementById("sunIcon");
+  const moonIcon    = document.getElementById("moonIcon");
+  let darkMode      = localStorage.getItem("darkMode") === "true";
+
+  const applyTheme = () => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    sunIcon.classList.toggle("hidden", !darkMode);
+    moonIcon.classList.toggle("hidden",  darkMode);
+  };
+  applyTheme();
+  themeToggle?.addEventListener("click", () => {
+    darkMode = !darkMode;
+    localStorage.setItem("darkMode", darkMode);
+    applyTheme();
+  });
 }
