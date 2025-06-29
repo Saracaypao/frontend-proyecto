@@ -1,4 +1,5 @@
 import "../../css/style.css";
+import { API_CONFIG, apiRequest } from "../config/api.js";
 
 export default function loadSignupPage() {
   const root = document.getElementById("signup-root");
@@ -148,6 +149,42 @@ root.innerHTML = `
           <p id="passwordMatchError" class="mt-1 text-sm text-red-600 hidden">Passwords do not match</p>
         </div>
         
+        <!-- Role Selection -->
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+            Tipo de Cuenta <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="relative cursor-pointer">
+              <input
+                type="radio"
+                name="role"
+                value="USER"
+                checked
+                class="sr-only"
+              />
+              <div class="role-option border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center transition-all hover:border-brand-300 dark:hover:border-brand-500">
+                <div class="text-lg mb-2">👤</div>
+                <div class="font-medium text-gray-900 dark:text-white">Usuario</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gestiona tus finanzas personales</div>
+              </div>
+            </label>
+            <label class="relative cursor-pointer">
+              <input
+                type="radio"
+                name="role"
+                value="ADVISOR"
+                class="sr-only"
+              />
+              <div class="role-option border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center transition-all hover:border-brand-300 dark:hover:border-brand-500">
+                <div class="text-lg mb-2">🎓</div>
+                <div class="font-medium text-gray-900 dark:text-white">Asesor</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Proporciona asesoría financiera</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        
         <!-- submit button -->
         <div>
           <button 
@@ -163,7 +200,7 @@ root.innerHTML = `
       <div class="mt-6 text-start">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Already have an account? 
-          <a href="#" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">
+          <a href="/signin.html" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">
             Sign In
           </a>
         </p>
@@ -233,6 +270,30 @@ root.innerHTML = `
   toggle("togglePassword",        "password",         "eyeOpenIcon",        "eyeCloseIcon");
   toggle("toggleConfirmPassword", "confirmPassword",  "eyeOpenIconConfirm", "eyeCloseIconConfirm");
 
+  // Role selection handling
+  const roleInputs = document.querySelectorAll('input[name="role"]');
+  const roleOptions = document.querySelectorAll('.role-option');
+  
+  function updateRoleSelection() {
+    roleOptions.forEach((option, index) => {
+      const input = roleInputs[index];
+      if (input.checked) {
+        option.classList.add('border-brand-500', 'bg-brand-50', 'dark:bg-brand-900/20');
+        option.classList.remove('border-gray-300', 'dark:border-gray-600');
+      } else {
+        option.classList.remove('border-brand-500', 'bg-brand-50', 'dark:bg-brand-900/20');
+        option.classList.add('border-gray-300', 'dark:border-gray-600');
+      }
+    });
+  }
+  
+  roleInputs.forEach(input => {
+    input.addEventListener('change', updateRoleSelection);
+  });
+  
+  // Initialize role selection
+  updateRoleSelection();
+
   // validate password match
   const passwordMatchError = document.getElementById("passwordMatchError");
   function validatePasswordMatch() {
@@ -259,28 +320,67 @@ signupForm?.addEventListener("submit", async (e) => {
     lastName:  document.getElementById("lastName").value,
     email:     document.getElementById("email").value,
     password:  document.getElementById("password").value,
+    role:      document.querySelector('input[name="role"]:checked').value,
   };
 
-  try {
+  // Mostrar loading
+  const submitBtn = signupForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = "Creando cuenta...";
+  submitBtn.disabled = true;
 
-    const res = await fetch("http://localhost:8080/users/register", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify(payload),
+  try {
+    const response = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.REGISTER, {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
 
-    if (res.ok) {
-      // redirige al login
+    // Mostrar mensaje de éxito
+    showNotification("¡Cuenta creada exitosamente! Redirigiendo al login...", "success");
+    
+    // Redirigir al login después de un breve delay
+    setTimeout(() => {
       window.location.href = "/signin.html";
-    } else {
-      const text = await res.text();
-      alert(`Error ${res.status}: ${text}`);
-    }
+    }, 2000);
+
   } catch (err) {
-    console.error("Network error:", err);
-    alert("No se pudo conectar al servidor.");
+    console.error("Error de registro:", err);
+    
+    // Mostrar mensaje de error más específico
+    let errorMessage = "Error al registrar usuario. Intenta nuevamente.";
+    
+    if (err.message.includes("409")) {
+      errorMessage = "El email ya está registrado. Intenta con otro email.";
+    } else if (err.message.includes("400")) {
+      errorMessage = "Datos inválidos. Verifica que todos los campos estén completos.";
+    } else if (err.message.includes("500")) {
+      errorMessage = "Error del servidor. Intenta más tarde.";
+    }
+    
+    showNotification(errorMessage, "error");
+  } finally {
+    // Restaurar botón
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
   }
 });
+
+  // Función para mostrar notificaciones
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+      type === 'success' ? 'bg-green-500 text-white' :
+      type === 'error' ? 'bg-red-500 text-white' :
+      'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 5000);
+  }
 
   // theme toggle button
   const themeToggle = document.getElementById("themeToggle");

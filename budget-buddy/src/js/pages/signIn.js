@@ -1,4 +1,5 @@
 import "../../css/style.css";
+import { API_CONFIG, apiRequest } from "../config/api.js";
 
 export default function loadSigninPage() {
   const root = document.getElementById("signin-root");
@@ -97,7 +98,7 @@ export default function loadSigninPage() {
       <div class="mt-6 text-start">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Don't have an account? 
-          <a href="#" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">
+          <a href="/signup.html" class="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">
             Sign Up
           </a>
         </p>
@@ -171,26 +172,61 @@ export default function loadSigninPage() {
     const email    = document.getElementById("email").value;
     const password = pwdInput.value;
 
+    // Mostrar loading
+    const submitBtn = signinForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "Iniciando sesión...";
+    submitBtn.disabled = true;
+
     try {
-      const res = await fetch("http://localhost:8080/auth/login", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email, password }),
+      const data = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
       });
 
-      if (res.ok) {
-        const data = await res.json(); // { id, fullName, email, role, token }
-        localStorage.setItem("jwtToken", data.token);
+      // Guardar token e información del usuario
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("userInfo", JSON.stringify({
+        id: data.id,
+        fullName: data.fullName,
+        email: data.email,
+        role: data.role
+      }));
+
+      // Mostrar mensaje de éxito
+      showNotification("¡Inicio de sesión exitoso!", "success");
+      
+      // Redirigir al dashboard
+      setTimeout(() => {
         window.location.href = "/index.html";
-      } else {
-        const msg = await res.text();
-        alert(`Login failed (${res.status}): ${msg}`);
-      }
+      }, 1000);
+
     } catch (err) {
-      console.error("Network error:", err);
-      alert("No se pudo conectar al servidor.");
+      console.error("Error de login:", err);
+      showNotification("Credenciales incorrectas. Intenta nuevamente.", "error");
+    } finally {
+      // Restaurar botón
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
   });
+
+  // Función para mostrar notificaciones
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+      type === 'success' ? 'bg-green-500 text-white' :
+      type === 'error' ? 'bg-red-500 text-white' :
+      'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
 
   // theme toggle button
   const themeToggle = document.getElementById("themeToggle");

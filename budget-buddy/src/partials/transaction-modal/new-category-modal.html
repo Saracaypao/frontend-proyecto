@@ -1,0 +1,80 @@
+<!-- Modal para crear nueva categoría -->
+<div
+  x-show="isCategoryModal"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="fixed inset-0 z-50 flex items-center justify-center"
+  style="display: none;"
+>
+  <!-- Overlay -->
+  <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+
+  <!-- Modal Content -->
+  <div
+    x-show="isCategoryModal"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 transform scale-95"
+    x-transition:enter-end="opacity-100 transform scale-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 transform scale-100"
+    x-transition:leave-end="opacity-0 transform scale-95"
+    class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4"
+    style="display: none;"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Crear Nueva Categoría
+      </h3>
+      <button
+        @click="closeCategoryModal()"
+        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-6">
+      <form @submit.prevent="createCategory()">
+        <!-- Nombre de la categoría -->
+        <div class="mb-6">
+          <label for="categoryName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Nombre de la Categoría *
+          </label>
+          <input
+            type="text"
+            id="categoryName"
+            x-model="newCategory.name"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Ej: Comida, Transporte, Entretenimiento"
+            required
+          />
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            @click="closeCategoryModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Crear Categoría
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

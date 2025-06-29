@@ -15,27 +15,228 @@
   <body
     data-page="transactions"
     x-data="{
-          page: 'transactions',loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false, scrollTop: false, isTransactionModal: false,
-          newTransaction: { description: '', category: '', date: '', visibility: '', amount: '' }, transactions: [],
-          filters: { category: '', date: '', visibility: '' }, showFilters: false, filteredTransactions: [],
+          page: 'transactions',loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false, scrollTop: false, 
+          isTransactionModal: false, isCategoryModal: false, isEditMode: false, editingTransactionId: null,
+          newTransaction: { description: '', categoryId: '', date: '', type: 'EXPENSE', isPublic: false, amount: null }, 
+          newCategory: { name: '' },
+          transactions: [], categories: [],
+          filters: { category: '', date: '', type: '' }, showFilters: false, filteredTransactions: [],
+          loading: false,
+          
+          async init() {
+            await this.loadCategories();
+            await this.fetchTransactions();
+            // Asegurar que la tabla se actualice después de cargar los datos
+            setTimeout(() => {
+              this.updateTransactionTable();
+            }, 100);
+          },
+          
+          async loadCategories() {
+            try {
+              const response = await fetch('http://localhost:8081/categories', {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+              });
+              if (response.ok) {
+                this.categories = await response.json();
+              }
+            } catch (error) {
+              console.error('Error cargando categorías:', error);
+            }
+          },
+          
+          async fetchTransactions() {
+            this.loading = true;
+            try {
+              const response = await fetch('http://localhost:8081/transactions', {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+              });
+              if (response.ok) {
+                const serverData = await response.json();
+                this.transactions = serverData;
+                this.updateTransactionTable();
+              }
+            } catch (err) {
+              console.error('Error cargando transacciones:', err);
+              this.showNotification('Error cargando transacciones', 'error');
+            } finally {
+              this.loading = false;
+            }
+          },
+          
+          async createTransaction() {
+            if (!this.validateTransaction()) return;
+            
+            try {
+              const response = await fetch('http://localhost:8081/transactions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                },
+                body: JSON.stringify(this.newTransaction)
+              });
+              
+              if (response.ok) {
+                this.showNotification('Transacción creada exitosamente', 'success');
+                this.resetForm();
+                this.isTransactionModal = false;
+                await this.fetchTransactions();
+                this.updateTransactionTable();
+              } else {
+                this.showNotification('Error creando transacción', 'error');
+              }
+            } catch (err) {
+              console.error('Error creando transacción:', err);
+              this.showNotification('Error creando transacción', 'error');
+            }
+          },
+          
+          validateTransaction() {
+            if (!this.newTransaction.description.trim()) {
+              this.showNotification('La descripción es requerida', 'error');
+              return false;
+            }
+            if (!this.newTransaction.categoryId) {
+              this.showNotification('La categoría es requerida', 'error');
+              return false;
+            }
+            if (!this.newTransaction.date) {
+              this.showNotification('La fecha es requerida', 'error');
+              return false;
+            }
+            if (!this.newTransaction.amount || this.newTransaction.amount <= 0) {
+              this.showNotification('El monto debe ser mayor a 0', 'error');
+              return false;
+            }
+            return true;
+          },
+          
+          resetForm() {
+            this.newTransaction = {
+              description: '',
+              categoryId: '',
+              date: '',
+              type: 'EXPENSE',
+              isPublic: false,
+              amount: null,
+            };
+          },
+          
+          openNewTransactionModal() {
+            this.isEditMode = false;
+            this.editingTransactionId = null;
+            this.resetForm();
+            this.isTransactionModal = true;
+          },
+          
+          closeModal() {
+            this.isTransactionModal = false;
+            this.isEditMode = false;
+            this.editingTransactionId = null;
+            this.resetForm();
+          },
+          
           addTransaction() {
-          this.transactions.push({ ...this.newTransaction });
-          this.newTransaction = { description: '', category: '', date: '', visibility: '', amount: '' };
-          this.isTransactionModal = false;
-        },
+            this.transactions.push({ ...this.newTransaction });
+            this.newTransaction = { description: '', categoryId: '', date: '', type: 'EXPENSE', isPublic: false, amount: null };
+            this.isTransactionModal = false;
+          },
+          
           applyFilters() {
             this.filteredTransactions = window.transactions.filter(tx =>
             (this.filters.category === '' || tx.category.toLowerCase().includes(this.filters.category.toLowerCase())) &&
             (this.filters.date === '' || tx.date === this.filters.date) &&
             (this.filters.visibility === '' || tx.visibility === this.filters.visibility)
           );
-          renderTransactionTable(this.filteredTransactions, 1);
-          this.showFilters = false;
-        }
+            renderTransactionTable(this.filteredTransactions, 1);
+            this.showFilters = false;
+          },
+          
+          openCategoryModal() {
+            this.isCategoryModal = true;
+            this.newCategory = { name: '' };
+          },
+          
+          closeCategoryModal() {
+            this.isCategoryModal = false;
+            this.newCategory = { name: '' };
+          },
+          
+          async createCategory() {
+            if (!this.newCategory.name.trim()) {
+              this.showNotification('Por favor ingresa el nombre de la categoría', 'error');
+              return;
+            }
+            
+            try {
+              const response = await fetch('http://localhost:8081/categories', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                },
+                body: JSON.stringify(this.newCategory)
+              });
+              
+              if (response.ok) {
+                const newCategory = await response.json();
+                this.categories.push(newCategory);
+                this.closeCategoryModal();
+                this.showNotification('Categoría creada exitosamente', 'success');
+                await this.loadCategories();
+                // Forzar actualización de la página para que aparezca en el selector
+                setTimeout(() => {
+                  window.location.reload();
+                }, 500);
+              } else {
+                this.showNotification('Error creando la categoría', 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              this.showNotification('Error creando la categoría', 'error');
+            }
+          },
+          
+          showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+              type === 'success' ? 'bg-green-500 text-white' :
+              type === 'error' ? 'bg-red-500 text-white' :
+              'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+              notification.remove();
+            }, 3000);
+          },
+          
+          updateTransactionTable() {
+            if (window.renderTransactionTable && this.transactions.length > 0) {
+              const formattedTransactions = this.transactions.map(tx => ({
+                description: tx.description,
+                category: tx.category?.name || 'Sin categoría',
+                type: tx.type,
+                date: tx.date,
+                visibility: tx.isPublic ? 'Public' : 'Private',
+                amount: `$${tx.amount.toFixed(2)}`
+              }));
+              window.renderTransactionTable(formattedTransactions);
+            }
+          }
       }"
     x-init="
       darkMode = JSON.parse(localStorage.getItem('darkMode'));
-      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+      init();
+      "
     :class="{'dark bg-gray-900': darkMode === true}"
   >
     <!-- ===== Preloader Start ===== -->
@@ -68,6 +269,19 @@
                 Here's a summary of your transactions
               </span>
             </div>
+            
+            <!-- Botón para crear nueva categoría -->
+            <div class="mt-4">
+              <button
+                @click="openCategoryModal()"
+                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Nueva Categoría
+              </button>
+            </div>
           </div>
 
           <!-- Contenedor de tabla  -->
@@ -84,5 +298,8 @@
       <!-- ===== Content Area End ===== -->
     </div>
     <!-- ===== Page Wrapper End ===== -->
+
+    <!-- Modal para crear nueva categoría -->
+    <include src="./partials/transaction-modal/new-category-modal.html" />
   </body>
 </html>

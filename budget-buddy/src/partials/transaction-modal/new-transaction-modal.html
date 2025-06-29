@@ -6,12 +6,12 @@
     class="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
   ></div>
   <div
-    @click.outside="isTransactionModal = false"
+    @click.outside="closeModal()"
     class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
   >
     <!-- close btn -->
     <button
-      @click="isTransactionModal = false"
+      @click="closeModal()"
       class="transition-color absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300"
     >
       <svg
@@ -38,7 +38,7 @@
         Add a new income or expense to your budget.
       </p>
     </div>
-    <form class="flex flex-col">
+    <form @submit.prevent="createTransaction()" class="flex flex-col">
       <div class="custom-scrollbar h-[450px] overflow-y-auto px-2">
         <div>
 
@@ -65,15 +65,29 @@
               >
                 Category
               </label>
-              </label>
-                <select x-model="newTransaction.category"  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" class="input" required>
-                <option value="">Choose a Category</option>
-                <option value="Food">Food</option>
-                <option value="Home">Home</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Health">Health</option>
+              <div class="flex gap-2">
+                <select 
+                  x-model="newTransaction.categoryId"  
+                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" 
+                  class="input" 
+                  required
+                >
+                  <option value="">Choose a Category</option>
+                  <template x-for="category in categories" :key="category.id">
+                    <option :value="category.id" x-text="category.name"></option>
+                  </template>
                 </select>
+                <button
+                  type="button"
+                  @click="openCategoryModal()"
+                  class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                  title="Crear nueva categoría"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div>
@@ -84,8 +98,8 @@
               </label>
                 <select x-model="newTransaction.type"  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" class="input" required>
                 <option value="">Select Type</option>
-                <option value="Income">Income</option>
-                <option value="Expense">Expense</option>
+                <option value="INCOME">Income</option>
+                <option value="EXPENSE">Expense</option>
                 </select>
             </div>
 
@@ -109,10 +123,10 @@
               >
                 Visibility
               </label>
-                <select x-model="newTransaction.visibility"  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" class="input" required>
+                <select x-model="newTransaction.isPublic"  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" class="input" required>
                 <option value="">Select Visibility</option>
-                <option value="Private">Private</option>
-                <option value="Public">Public</option>
+                <option value="false">Private</option>
+                <option value="true">Public</option>
                 </select>
             </div>
 
@@ -138,7 +152,7 @@
       <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
         <button
           type="button"
-          @click="isTransactionModal = false"
+          @click="closeModal()"
           class="flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
         >
           Cancel

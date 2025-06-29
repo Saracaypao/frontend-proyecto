@@ -2,6 +2,36 @@
   :class="sidebarToggle ? 'translate-x-0 lg:w-[90px]' : '-translate-x-full'"
   class="sidebar fixed left-0 top-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 duration-300 ease-linear dark:border-gray-800 dark:bg-black lg:static lg:translate-x-0"
   @click.outside="sidebarToggle = false"
+  x-data="{ isUserAdvisor: false }"
+  x-init="
+    (() => {
+      // Detectar el rol del usuario desde el token JWT
+      try {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+          window.location.href = './signin.html';
+          return;
+        }
+        
+        // Verificar si el token es válido
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp < currentTime) {
+          localStorage.removeItem('jwtToken');
+          window.location.href = './signin.html';
+          return;
+        }
+        
+        if (token) {
+          isUserAdvisor = payload.role === 'ADVISOR';
+        }
+      } catch (error) {
+        console.error('Error verificando rol:', error);
+        localStorage.removeItem('jwtToken');
+        window.location.href = './signin.html';
+      }
+    })()
+  "
 >
   <!-- SIDEBAR HEADER -->
   <div
@@ -100,40 +130,78 @@
 
           <!-- Menu Item Transactions -->
           <li>
-            <a
-              href="transactions.html"
-              class="menu-item group"
-              :class="window.currentPage === 'transactions' ? 'menu-item-active' : 'menu-item-inactive'"
-            >
-            
-              <svg
-                :class="window.currentPage === 'transactions' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                stroke-width="1.5" 
-                stroke="currentColor" 
-                class="size-6"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <!-- Para usuarios normales: Transacciones -->
+            <template x-if="!isUserAdvisor">
+              <a
+                href="transactions.html"
+                class="menu-item group"
+                :class="window.currentPage === 'transactions' ? 'menu-item-active' : 'menu-item-inactive'"
               >
-                <path
-                  stroke-linecap="round" 
-                  stroke-linejoin="round"
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d= "M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
-                  fill=""
-                />
-              </svg>
+                <svg
+                  :class="window.currentPage === 'transactions' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5" 
+                  stroke="currentColor" 
+                  class="size-6"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d= "M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                    fill=""
+                  />
+                </svg>
 
-              <span
-                class="menu-item-text"
-                :class="sidebarToggle ? 'lg:hidden' : ''"
+                <span
+                  class="menu-item-text"
+                  :class="sidebarToggle ? 'lg:hidden' : ''"
+                >
+                  Transactions
+                </span>
+              </a>
+            </template>
+            
+            <!-- Para asesores: Historial de Asesorías -->
+            <template x-if="isUserAdvisor">
+              <a
+                href="financialAdv.html"
+                class="menu-item group"
+                :class="window.currentPage === 'financialAdv' ? 'menu-item-active' : 'menu-item-inactive'"
               >
-                Transactions
-              </span>
-            </a>
+                <svg
+                  :class="window.currentPage === 'financialAdv' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    fill="none"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+
+                <span
+                  class="menu-item-text"
+                  :class="sidebarToggle ? 'lg:hidden' : ''"
+                >
+                  Historial de Asesorías
+                </span>
+              </a>
+            </template>
           </li>
           <!-- Menu Item Transactions -->
 
@@ -174,77 +242,43 @@
           </li>
           <!-- Menu Item Report -->
 
-          <!-- Menu Item Categories -->
-          <li>
-            <a
-              href="categories.html"
-              class="menu-item group"
-              :class="window.currentPage === 'categories' ? 'menu-item-active' : 'menu-item-inactive'"
-            >
-              <svg
-                :class="window.currentPage === 'categories' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  fill="none"
-                  d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75ZM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25ZM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25Z"
-                />
-              </svg>
-
-              <span
-                class="menu-item-text"
-                :class="sidebarToggle ? 'lg:hidden' : ''"
-              >
-                Categories
-              </span>
-            </a>
-          </li>
-          <!-- Menu Item Categories -->
-
           <!-- Menu Item Financial Advice -->
           <li>
-            <a
-              href="financialAdv.html"
-              class="menu-item group"
-              :class="window.currentPage === 'financialAdv' ? 'menu-item-active' : 'menu-item-inactive'"
-            >
-              <svg
-                :class="window.currentPage === 'financialAdv' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <!-- Solo para usuarios normales -->
+            <template x-if="!isUserAdvisor">
+              <a
+                href="financialAdv.html"
+                class="menu-item group"
+                :class="window.currentPage === 'financialAdv' ? 'menu-item-active' : 'menu-item-inactive'"
               >
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                <svg
+                  :class="window.currentPage === 'financialAdv' ? 'menu-item-stroke-active' : 'menu-item-stroke-inactive'"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
                   fill="none"
-                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                />
-              </svg>
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    fill="none"
+                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                  />
+                </svg>
 
-              <span
-                class="menu-item-text"
-                :class="sidebarToggle ? 'lg:hidden' : ''"
-              >
-                Financial Advice
-              </span>
-            </a>
+                <span
+                  class="menu-item-text"
+                  :class="sidebarToggle ? 'lg:hidden' : ''"
+                >
+                  Financial Advice
+                </span>
+              </a>
+            </template>
           </li>
           <!-- Menu Item Financial Advice -->
 

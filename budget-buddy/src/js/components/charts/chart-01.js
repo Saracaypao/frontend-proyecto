@@ -1,81 +1,136 @@
 // src/js/components/charts/chart-01.js
 import ApexCharts from "apexcharts";
+import { API_CONFIG, apiRequest } from "../../config/api.js";
 
-export default async function chart01() {
-  const jwt = localStorage.getItem("jwtToken");
-  let data;
-
-  try {
-    const res = await fetch("http://localhost:8080/transactions/summary/last-6-months", {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`,
+export default function chart01() {
+  const chart01Options = {
+    series: [
+      {
+        name: "Ingresos",
+        data: [0, 0, 0, 0, 0, 0],
+        color: "#10B981" // Verde para ingresos
       },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    data = await res.json(); // [{ month: "JANUARY", income: 123, expense: 45 }, ...]
-  } catch (err) {
-    console.error("Error cargando datos de 6 meses:", err);
-    // fallback data in case of error
-    data = [
-      { month: "Jan", income: 800, expense: 300 },
-      { month: "Feb", income: 950, expense: 400 },
-      { month: "Mar", income: 900, expense: 350 },
-      { month: "Apr", income: 1000, expense: 500 },
-      { month: "May", income: 1050, expense: 490 },
-      { month: "Jun", income: 1100, expense: 600 },
-    ];
-  }
-
-  const categories   = data.map(d => d.month.substring(0,3));
-  const incomeSeries = data.map(d => d.income);
-  const expenseSeries= data.map(d => d.expense);
-
-  const options = {
+      {
+        name: "Gastos",
+        data: [0, 0, 0, 0, 0, 0],
+        color: "#EF4444" // Rojo para gastos
+      },
+    ],
     chart: {
       type: "bar",
-      height: 260,
-      toolbar: { show: false },
+      height: 350,
+      toolbar: {
+        show: false,
+      },
+      fontFamily: 'Inter, sans-serif',
     },
-    series: [
-      { name: "Income",  data: incomeSeries  },
-      { name: "Expenses",data: expenseSeries },
-    ],
-    colors: ["#465fff", "#6495ED"],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "75%",
-        borderRadius: 5,
-        borderRadiusApplication: "end",
-        dataLabels: {
-          position: "top",
+        columnWidth: "55%",
+        endingShape: "rounded",
+        borderRadius: 4,
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"],
+    },
+    xaxis: {
+      categories: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
+      labels: {
+        style: {
+          colors: "#6B7280",
+          fontSize: "12px",
+          fontFamily: "Inter, sans-serif",
         },
       },
     },
-    dataLabels: { enabled: false },
-    stroke: { show: true, width: 2, colors: ["transparent"] },
-    xaxis: {
-      categories,
-      axisBorder: { show: false },
-      axisTicks:  { show: false },
+    yaxis: {
+      title: {
+        text: "$ (dólares)",
+        style: {
+          color: "#6B7280",
+          fontSize: "12px",
+          fontFamily: "Inter, sans-serif",
+        },
+      },
+      labels: {
+        style: {
+          colors: "#6B7280",
+          fontSize: "12px",
+          fontFamily: "Inter, sans-serif",
+        },
+        formatter: function (val) {
+          return "$" + val.toFixed(0);
+        },
+      },
     },
-    yaxis: { labels: { style: { colors: "#6b7280" } } },
+    fill: {
+      opacity: 1,
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return "$ " + val.toFixed(2) + " dólares";
+        },
+      },
+      theme: "dark",
+    },
     legend: {
       position: "top",
-      horizontalAlign: "left",
-      fontFamily: "Outfit",
-      labels: { colors: "#6b7280" },
-      markers: { radius: 99 },
+      horizontalAlign: "right",
+      labels: {
+        colors: "#6B7280",
+        useSeriesColors: false,
+      },
     },
-    fill: { opacity: 1 },
-    tooltip: {
-      y: { formatter: val => $`${val} `}
+    grid: {
+      borderColor: "#E5E7EB",
+      strokeDashArray: 4,
     },
   };
 
-  const chartEl = document.querySelector("#chartOne");
-  if (chartEl) {
-    new ApexCharts(chartEl, options).render();
+  // Cargar datos del backend
+  async function loadChartData() {
+    try {
+      const data = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.SUMMARY_LAST_6_MONTHS);
+      
+      // Actualizar los datos del gráfico
+      if (data && data.length > 0) {
+        const incomeData = data.map(item => item.income || 0);
+        const expenseData = data.map(item => item.expense || 0);
+        
+        // Actualizar las series del gráfico
+        chart01Options.series[0].data = incomeData;
+        chart01Options.series[1].data = expenseData;
+        
+        // Re-renderizar el gráfico si ya existe
+        if (window.chart01) {
+          window.chart01.updateOptions({
+            series: chart01Options.series
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando datos del gráfico:", error);
+      // Mantener datos por defecto en caso de error
+    }
+  }
+
+  const chartSelector = document.querySelectorAll("#chartOne");
+  if (chartSelector.length) {
+    const chart01 = new ApexCharts(document.querySelector("#chartOne"), chart01Options);
+    chart01.render();
+    window.chart01 = chart01;
+    
+    // Cargar datos después de renderizar
+    setTimeout(() => {
+      loadChartData();
+    }, 500);
   }
 }

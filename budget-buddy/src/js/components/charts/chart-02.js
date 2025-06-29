@@ -1,65 +1,155 @@
-import ApexCharts from "apexcharts";
+import { Chart, registerables } from 'chart.js';
 
-// ===== chartTwo
-const chart02 = () => {
-  const chartTwoOptions = {
-    series: [75.55],
-    colors: ["#465FFF"],
-    chart: {
-      fontFamily: "Outfit, sans-serif",
-      type: "radialBar",
-      height: 330,
-      sparkline: {
-        enabled: true,
-      },
-    },
-    plotOptions: {
-      radialBar: {
-        startAngle: -90,
-        endAngle: 90,
-        hollow: {
-          size: "80%",
-        },
-        track: {
-          background: "#E4E7EC",
-          strokeWidth: "100%",
-          margin: 5, // margin is in pixels
-        },
-        dataLabels: {
-          name: {
-            show: false,
-          },
-          value: {
-            fontSize: "36px",
-            fontWeight: "600",
-            offsetY: 60,
-            color: "#1D2939",
-            formatter: function (val) {
-              return val + "%";
-            },
-          },
-        },
-      },
-    },
-    fill: {
-      type: "solid",
-      colors: ["#465FFF"],
-    },
-    stroke: {
-      lineCap: "round",
-    },
-    labels: ["Progress"],
-  };
+// Registrar todos los componentes de Chart.js
+Chart.register(...registerables);
 
-  const chartSelector = document.querySelectorAll("#chartTwo");
+let reportChart = null;
 
-  if (chartSelector.length) {
-    const chartFour = new ApexCharts(
-      document.querySelector("#chartTwo"),
-      chartTwoOptions,
-    );
-    chartFour.render();
+export function renderReportChart(canvas, data) {
+  // Destruir gráfico existente si hay uno
+  if (reportChart) {
+    reportChart.destroy();
   }
-};
 
-export default chart02;
+  const ctx = canvas.getContext('2d');
+  
+  reportChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+            font: {
+              size: 12
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+            }
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+
+  return reportChart;
+}
+
+export function renderBarChart(canvas, data) {
+  // Destruir gráfico existente si hay uno
+  if (reportChart) {
+    reportChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+  
+  reportChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+            font: {
+              size: 12
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toFixed(2);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return reportChart;
+}
+
+export function renderLineChart(canvas, data) {
+  // Destruir gráfico existente si hay uno
+  if (reportChart) {
+    reportChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+  
+  reportChart = new Chart(ctx, {
+    type: 'line',
+    data: data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+            font: {
+              size: 12
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toFixed(2);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return reportChart;
+}
+
+export function destroyChart() {
+  if (reportChart) {
+    reportChart.destroy();
+    reportChart = null;
+  }
+}

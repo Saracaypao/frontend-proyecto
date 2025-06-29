@@ -1,17 +1,3 @@
-// dummy data for transactions
-export const transactions = [
-  { description: "Bought a new laptop", category: "Laptop", type: "Expense", date: "2024-03-31", visibility: "Private", amount: "$2399.00" },
-  { description: "Monthly music plan", category: "Entertainment", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$9.99" },
-  { description: "Bought a new smartwatch", category: "Watch", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$879.00" },
-  { description: "Bought mom a new phone", category: "Phone", type: "Expense", date: "2024-04-01", visibility: "Private", amount: "$1869.00" },
-  { description: "Bought new wireless earbuds", category: "Earbuds", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$240.00" },
-  { description: "Bought a new laptop", category: "Laptop", type: "Expense", date: "2024-05-31", visibility: "Private", amount: "$2399.00" },
-  { description: "Monthly music plan", category: "Entertainment", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$9.99" },
-  { description: "Bought a new smartwatch", category: "Watch", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$879.00" },
-  { description: "Bought mom a new phone", category: "Phone", type: "Expense", date: "2024-04-01", visibility: "Private", amount: "$1869.00" },
-  { description: "Bought new wireless earbuds", category: "Earbuds", type: "Expense", date: "2024-04-01", visibility: "Public", amount: "$240.00" },
-];
-
 // function that generates table rows for transactions
 function generateTransactionRow(tx, index) {
   const typeClass =
@@ -65,9 +51,16 @@ function generateTransactionRow(tx, index) {
 }
 
 // rendering table with transactions data
-export function renderTransactionTable(data = transactions, page = 1, pageSize = 5) {
+export function renderTransactionTable(data = [], page = 1, pageSize = 5) {
   const tbody = document.querySelector("tbody");
   if (!tbody) return;
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-500 dark:text-gray-400">No hay transacciones</td></tr>`;
+    const container = document.getElementById("pagination");
+    if (container) container.innerHTML = "";
+    return;
+  }
 
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
@@ -108,11 +101,11 @@ export function renderTransactionTable(data = transactions, page = 1, pageSize =
   });
 
   window.currentTransactionPage = page;
-  renderPagination(data.length, page, pageSize);
+  renderPagination(data, data.length, page, pageSize);
 }
 
 // function to render pagination controls
-function renderPagination(totalItems, currentPage, pageSize) {
+function renderPagination(data, totalItems, currentPage, pageSize) {
   const container = document.getElementById("pagination");
   if (!container) return;
 
@@ -155,10 +148,61 @@ function renderPagination(totalItems, currentPage, pageSize) {
   container.querySelectorAll("button[data-page]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const page = Number(e.target.dataset.page);
-      renderTransactionTable(transactions, page, pageSize);
+      renderTransactionTable(data, page, pageSize);
     });
   });
 }
 
-window.transactions = transactions;
+// Función para renderizar transacciones recientes en el dashboard
+export function renderRecentTransactions(transactions = []) {
+  const tbody = document.getElementById("recent-transactions-tbody");
+  if (!tbody) return;
+
+  if (transactions.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="py-8 text-center text-gray-500 dark:text-gray-400">
+          No hay transacciones recientes
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Limitar a las últimas 5 transacciones
+  const recentTransactions = transactions.slice(0, 5);
+  
+  tbody.innerHTML = recentTransactions.map((tx, i) => `
+    <tr class="relative group">
+      <td class="py-3">
+        <div>
+          <span class="text-gray-500 text-theme-xs dark:text-gray-400">
+            ${tx.description}
+          </span>
+        </div>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.category}</p>
+      </td>
+      <td class="py-3">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${
+          tx.type === 'INCOME' 
+            ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500'
+            : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500'
+        }">
+          ${tx.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
+        </span>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.date}</p>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium ${
+          tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+        }">${tx.amount}</p>
+      </td>
+    </tr>
+  `).join('');
+}
+
 window.renderTransactionTable = renderTransactionTable;
