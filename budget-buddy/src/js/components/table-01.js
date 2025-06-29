@@ -198,7 +198,7 @@ export function renderRecentTransactions(transactions = []) {
             ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500'
             : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500'
         }">
-          ${tx.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
+          ${tx.type === 'INCOME' ? 'Income' : 'Expense'}
         </span>
       </td>
       <td class="py-3">

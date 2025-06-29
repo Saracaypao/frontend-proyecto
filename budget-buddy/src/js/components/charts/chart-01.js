@@ -6,12 +6,12 @@ export default function chart01() {
   const chart01Options = {
     series: [
       {
-        name: "Ingresos",
+        name: "Income",
         data: [0, 0, 0, 0, 0, 0],
         color: "#10B981" // Verde para ingresos
       },
       {
-        name: "Gastos",
+        name: "Expenses",
         data: [0, 0, 0, 0, 0, 0],
         color: "#EF4444" // Rojo para gastos
       },

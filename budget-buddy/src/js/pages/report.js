@@ -28,8 +28,8 @@ export default function reportComponent() {
         this.currentReport = reportService.formatReportForUI(report);
         this.renderReport();
       } catch (error) {
-        console.error('Error cargando reporte general:', error);
-        this.showNotification('Error cargando reporte general', 'error');
+        console.error('Error loading general report:', error);
+        this.showNotification('Error loading general report', 'error');
       } finally {
         this.loading = false;
       }
@@ -42,8 +42,8 @@ export default function reportComponent() {
         this.currentReport = reportService.formatReportForUI(report);
         this.renderReport();
       } catch (error) {
-        console.error('Error cargando reporte por año:', error);
-        this.showNotification('Error cargando reporte por año', 'error');
+        console.error('Error loading yearly report:', error);
+        this.showNotification('Error loading yearly report', 'error');
       } finally {
         this.loading = false;
       }
@@ -56,8 +56,8 @@ export default function reportComponent() {
         this.currentReport = reportService.formatReportForUI(report);
         this.renderReport();
       } catch (error) {
-        console.error('Error cargando reporte por mes:', error);
-        this.showNotification('Error cargando reporte por mes', 'error');
+        console.error('Error loading monthly report:', error);
+        this.showNotification('Error loading monthly report', 'error');
       } finally {
         this.loading = false;
       }
@@ -65,7 +65,7 @@ export default function reportComponent() {
 
     async loadReportByDateRange() {
       if (!this.startDate || !this.endDate) {
-        this.showNotification('Por favor selecciona fechas de inicio y fin', 'error');
+        this.showNotification('Please select start and end dates', 'error');
         return;
       }
 
@@ -75,8 +75,8 @@ export default function reportComponent() {
         this.currentReport = reportService.formatReportForUI(report);
         this.renderReport();
       } catch (error) {
-        console.error('Error cargando reporte por rango:', error);
-        this.showNotification('Error cargando reporte por rango', 'error');
+        console.error('Error loading date range report:', error);
+        this.showNotification('Error loading date range report', 'error');
       } finally {
         this.loading = false;
       }
@@ -87,7 +87,7 @@ export default function reportComponent() {
         this.last6MonthsData = await reportService.getLast6MonthsReport();
         this.renderLast6MonthsChart();
       } catch (error) {
-        console.error('Error cargando datos de 6 meses:', error);
+        console.error('Error loading 6-month data:', error);
       }
     },
 
@@ -150,7 +150,7 @@ export default function reportComponent() {
       if (!this.currentReport) return;
 
       const chartData = {
-        labels: ['Ingresos', 'Gastos'],
+        labels: ['Income', 'Expenses'],
         datasets: [{
           data: [this.currentReport.totalIncome, this.currentReport.totalExpenses],
           backgroundColor: ['#10B981', '#EF4444'],
@@ -172,14 +172,14 @@ export default function reportComponent() {
         labels: this.last6MonthsData.map(item => item.period),
         datasets: [
           {
-            label: 'Ingresos',
+            label: 'Income',
             data: this.last6MonthsData.map(item => item.totalIncome),
             backgroundColor: '#10B981',
             borderColor: '#059669',
             borderWidth: 1
           },
           {
-            label: 'Gastos',
+            label: 'Expenses',
             data: this.last6MonthsData.map(item => item.totalExpenses),
             backgroundColor: '#EF4444',
             borderColor: '#DC2626',
@@ -196,7 +196,7 @@ export default function reportComponent() {
 
     exportReport() {
       if (!this.currentReport) {
-        this.showNotification('No hay reporte para exportar', 'error');
+        this.showNotification('No report available to export', 'error');
         return;
       }
 
@@ -216,7 +216,7 @@ export default function reportComponent() {
       link.click();
       
       URL.revokeObjectURL(url);
-      this.showNotification('Reporte exportado exitosamente', 'success');
+      this.showNotification('Report exported successfully', 'success');
     },
 
     showNotification(message, type = 'info') {
@@ -265,4 +265,4 @@ export default function reportComponent() {
       return `${((this.currentReport.totalExpenses / total) * 100).toFixed(1)}%`;
     }
   };
-} 
+}
