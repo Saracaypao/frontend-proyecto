@@ -51,7 +51,7 @@ function generateTransactionRow(tx, index) {
 }
 
 // rendering table with transactions data
-export function renderTransactionTable(data = [], page = 1, pageSize = 5) {
+export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
   const tbody = document.querySelector("tbody");
   if (!tbody) return;
 
@@ -90,13 +90,21 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5) {
     // this will assign functionality to the Edit and Delete button
   document.querySelectorAll(".edit-btn").forEach((btn, i) => {
     btn.addEventListener("click", () => {
-      alert(`Edit clicked on row ${i + 1}`);
+      if (onEdit && typeof onEdit === 'function') {
+        onEdit(paginated[i]);
+      } else {
+        alert(`Edit clicked on row ${i + 1}`);
+      }
     });
   });
 
   document.querySelectorAll(".delete-btn").forEach((btn, i) => {
     btn.addEventListener("click", () => {
-      alert(`Delete clicked on row ${i + 1}`);
+      if (onDelete && typeof onDelete === 'function') {
+        onDelete(paginated[i]);
+      } else {
+        alert(`Delete clicked on row ${i + 1}`);
+      }
     });
   });
 

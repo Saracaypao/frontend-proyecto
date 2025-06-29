@@ -47,7 +47,7 @@ export default function transactionsComponent() {
       try {
         const serverData = await transactionService.loadTransactions();
         this.transactions = serverData.map(tx => transactionService.formatTransactionForUI(tx));
-        renderTransactionTable(this.transactions);
+        renderTransactionTable(this.transactions, 1, 5);
       } catch (err) {
         console.error("Error cargando transacciones:", err);
         this.showNotification("Error cargando transacciones", "error");
@@ -146,7 +146,7 @@ export default function transactionsComponent() {
 
         const filteredData = await transactionService.getFilteredTransactions(filters);
         this.transactions = filteredData.map(tx => transactionService.formatTransactionForUI(tx));
-        renderTransactionTable(this.transactions);
+        renderTransactionTable(this.transactions, 1, 5);
       } catch (err) {
         console.error("Error aplicando filtros:", err);
         this.showNotification("Error aplicando filtros", "error");

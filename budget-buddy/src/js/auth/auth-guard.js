@@ -6,7 +6,8 @@ const PROTECTED_PAGES = [
   'transactions.html',
   'report.html',
   'profile.html',
-  'financialAdv.html'
+  'financialAdv.html',
+  'settings.html'
 ];
 
 // Páginas públicas (no requieren autenticación)

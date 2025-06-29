@@ -349,7 +349,14 @@ signupForm?.addEventListener("submit", async (e) => {
     // Mostrar mensaje de error más específico
     let errorMessage = "Error al registrar usuario. Intenta nuevamente.";
     
-    if (err.message.includes("409")) {
+    // Verificar si es un error de email ya registrado
+    if (err.message.includes("This email is already in use") || 
+        err.message.includes("email is already in use") ||
+        err.message.includes("already in use") ||
+        err.message.includes("Este email ya está registrado") ||
+        err.message.includes("email ya está registrado")) {
+      errorMessage = "El email ya está registrado. Intenta con otro email.";
+    } else if (err.message.includes("409")) {
       errorMessage = "El email ya está registrado. Intenta con otro email.";
     } else if (err.message.includes("400")) {
       errorMessage = "Datos inválidos. Verifica que todos los campos estén completos.";
@@ -368,17 +375,37 @@ signupForm?.addEventListener("submit", async (e) => {
   // Función para mostrar notificaciones
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-      type === 'success' ? 'bg-green-500 text-white' :
-      type === 'error' ? 'bg-red-500 text-white' :
-      'bg-blue-500 text-white'
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm transform transition-all duration-300 ${
+      type === 'success' ? 'bg-green-500 text-white border-l-4 border-green-600' :
+      type === 'error' ? 'bg-red-500 text-white border-l-4 border-red-600' :
+      'bg-blue-500 text-white border-l-4 border-blue-600'
     }`;
-    notification.textContent = message;
+    
+    // Agregar icono según el tipo
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <span class="text-lg mr-2">${icon}</span>
+        <span class="text-sm font-medium">${message}</span>
+      </div>
+    `;
     
     document.body.appendChild(notification);
     
+    // Animación de entrada
+    notification.style.transform = 'translateX(100%)';
     setTimeout(() => {
-      notification.remove();
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+      notification.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
     }, 5000);
   }
 

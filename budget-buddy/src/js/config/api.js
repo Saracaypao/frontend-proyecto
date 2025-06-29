@@ -9,7 +9,8 @@ const API_CONFIG = {
     },
     USERS: {
       PROFILE: '/users/profile',
-      UPDATE: '/users/update'
+      UPDATE: '/users/update',
+      CHANGE_PASSWORD: '/users/change-password'
     },
     TRANSACTIONS: {
       LIST: '/transactions',

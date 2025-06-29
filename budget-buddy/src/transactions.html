@@ -24,12 +24,18 @@
           loading: false,
           
           async init() {
-            await this.loadCategories();
-            await this.fetchTransactions();
-            // Asegurar que la tabla se actualice después de cargar los datos
-            setTimeout(() => {
-              this.updateTransactionTable();
-            }, 100);
+            try {
+              await this.loadCategories();
+              await this.fetchTransactions();
+              
+              // Asegurar que la tabla se actualice después de cargar los datos
+              setTimeout(() => {
+                this.updateTransactionTable();
+              }, 100);
+            } catch (error) {
+              console.error('Error en la inicialización:', error);
+              this.showNotification('Error cargando datos iniciales', 'error');
+            }
           },
           
           async loadCategories() {
@@ -55,13 +61,21 @@
                   'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
                 }
               });
+              
               if (response.ok) {
                 const serverData = await response.json();
-                this.transactions = serverData;
+                this.transactions = serverData || [];
                 this.updateTransactionTable();
+              } else {
+                console.error('Error en la respuesta del servidor:', response.status);
+                this.transactions = [];
+                this.updateTransactionTable();
+                this.showNotification('Error cargando transacciones', 'error');
               }
             } catch (err) {
               console.error('Error cargando transacciones:', err);
+              this.transactions = [];
+              this.updateTransactionTable();
               this.showNotification('Error cargando transacciones', 'error');
             } finally {
               this.loading = false;
@@ -93,6 +107,60 @@
             } catch (err) {
               console.error('Error creando transacción:', err);
               this.showNotification('Error creando transacción', 'error');
+            }
+          },
+          
+          async updateTransaction() {
+            if (!this.validateTransaction()) return;
+            
+            try {
+              const response = await fetch(`http://localhost:8081/transactions/${this.editingTransactionId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                },
+                body: JSON.stringify(this.newTransaction)
+              });
+              
+              if (response.ok) {
+                this.showNotification('Transacción actualizada exitosamente', 'success');
+                this.resetForm();
+                this.isTransactionModal = false;
+                this.isEditMode = false;
+                this.editingTransactionId = null;
+                await this.fetchTransactions();
+                this.updateTransactionTable();
+              } else {
+                this.showNotification('Error actualizando transacción', 'error');
+              }
+            } catch (err) {
+              console.error('Error actualizando transacción:', err);
+              this.showNotification('Error actualizando transacción', 'error');
+            }
+          },
+          
+          async deleteTransaction(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta transacción?')) return;
+            
+            try {
+              const response = await fetch(`http://localhost:8081/transactions/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+              });
+              
+              if (response.ok) {
+                this.showNotification('Transacción eliminada exitosamente', 'success');
+                await this.fetchTransactions();
+                this.updateTransactionTable();
+              } else {
+                this.showNotification('Error eliminando transacción', 'error');
+              }
+            } catch (err) {
+              console.error('Error eliminando transacción:', err);
+              this.showNotification('Error eliminando transacción', 'error');
             }
           },
           
@@ -148,13 +216,71 @@
           },
           
           applyFilters() {
-            this.filteredTransactions = window.transactions.filter(tx =>
-            (this.filters.category === '' || tx.category.toLowerCase().includes(this.filters.category.toLowerCase())) &&
-            (this.filters.date === '' || tx.date === this.filters.date) &&
-            (this.filters.visibility === '' || tx.visibility === this.filters.visibility)
-          );
-            renderTransactionTable(this.filteredTransactions, 1);
+            // Verificar que las transacciones existan antes de filtrar
+            if (!this.transactions || !Array.isArray(this.transactions)) {
+              console.error('No hay transacciones disponibles para filtrar');
+              this.showNotification('No hay transacciones disponibles', 'error');
+              return;
+            }
+            
+            this.filteredTransactions = this.transactions.filter(tx => {
+              // Usar directamente categoryName que viene del backend
+              const categoryName = tx.categoryName || '';
+              
+              return (this.filters.category === '' || categoryName.toLowerCase().includes(this.filters.category.toLowerCase())) &&
+                     (this.filters.date === '' || tx.date === this.filters.date) &&
+                     (this.filters.type === '' || tx.type === this.filters.type);
+            });
+            
+            // Actualizar la tabla con las transacciones filtradas
+            if (window.renderTransactionTable) {
+              const formattedTransactions = this.filteredTransactions.map(tx => {
+                // Usar directamente categoryName que viene del backend
+                const categoryName = tx.categoryName || 'Sin categoría';
+                
+                return {
+                  id: tx.id,
+                  description: tx.description,
+                  category: categoryName,
+                  categoryId: tx.categoryId,
+                  type: tx.type,
+                  date: tx.date,
+                  visibility: tx.isPublic ? 'Public' : 'Private',
+                  amount: `$${tx.amount.toFixed(2)}`,
+                  rawAmount: tx.amount,
+                  isPublic: tx.isPublic
+                };
+              });
+              window.renderTransactionTable(
+                formattedTransactions, 1, 5,
+                (transaction) => {
+                  // Función de edición
+                  this.isEditMode = true;
+                  this.editingTransactionId = transaction.id;
+                  this.newTransaction = {
+                    description: transaction.description,
+                    categoryId: transaction.categoryId,
+                    date: transaction.date,
+                    type: transaction.type,
+                    isPublic: transaction.isPublic,
+                    amount: transaction.rawAmount,
+                  };
+                  this.isTransactionModal = true;
+                },
+                (transaction) => {
+                  // Función de eliminación
+                  this.deleteTransaction(transaction.id);
+                }
+              );
+            }
+            
             this.showFilters = false;
+          },
+          
+          clearFilters() {
+            this.filters = { category: '', date: '', type: '' };
+            this.filteredTransactions = [];
+            this.fetchTransactions();
           },
           
           openCategoryModal() {
@@ -219,16 +345,75 @@
           },
           
           updateTransactionTable() {
-            if (window.renderTransactionTable && this.transactions.length > 0) {
-              const formattedTransactions = this.transactions.map(tx => ({
-                description: tx.description,
-                category: tx.category?.name || 'Sin categoría',
-                type: tx.type,
-                date: tx.date,
-                visibility: tx.isPublic ? 'Public' : 'Private',
-                amount: `$${tx.amount.toFixed(2)}`
-              }));
-              window.renderTransactionTable(formattedTransactions);
+            if (window.renderTransactionTable && this.transactions && this.transactions.length > 0) {
+              const formattedTransactions = this.transactions.map(tx => {
+                // Usar directamente categoryName que viene del backend
+                const categoryName = tx.categoryName || 'Sin categoría';
+                
+                return {
+                  id: tx.id,
+                  description: tx.description,
+                  category: categoryName,
+                  categoryId: tx.categoryId,
+                  type: tx.type,
+                  date: tx.date,
+                  visibility: tx.isPublic ? 'Public' : 'Private',
+                  amount: `$${tx.amount.toFixed(2)}`,
+                  rawAmount: tx.amount,
+                  isPublic: tx.isPublic
+                };
+              });
+              window.renderTransactionTable(
+                formattedTransactions, 1, 5,
+                (transaction) => {
+                  // Función de edición
+                  this.isEditMode = true;
+                  this.editingTransactionId = transaction.id;
+                  this.newTransaction = {
+                    description: transaction.description,
+                    categoryId: transaction.categoryId,
+                    date: transaction.date,
+                    type: transaction.type,
+                    isPublic: transaction.isPublic,
+                    amount: transaction.rawAmount,
+                  };
+                  this.isTransactionModal = true;
+                },
+                (transaction) => {
+                  // Función de eliminación
+                  this.deleteTransaction(transaction.id);
+                }
+              );
+            } else if (window.renderTransactionTable) {
+              // Si no hay transacciones, mostrar tabla vacía
+              window.renderTransactionTable([], 1, 5, 
+                (transaction) => {
+                  // Función de edición
+                  this.isEditMode = true;
+                  this.editingTransactionId = transaction.id;
+                  this.newTransaction = {
+                    description: transaction.description,
+                    categoryId: transaction.categoryId,
+                    date: transaction.date,
+                    type: transaction.type,
+                    isPublic: transaction.isPublic,
+                    amount: transaction.rawAmount,
+                  };
+                  this.isTransactionModal = true;
+                },
+                (transaction) => {
+                  // Función de eliminación
+                  this.deleteTransaction(transaction.id);
+                }
+              );
+            }
+          },
+          
+          handleSubmit() {
+            if (this.isEditMode) {
+              this.updateTransaction();
+            } else {
+              this.createTransaction();
             }
           }
       }"
@@ -271,7 +456,16 @@
             </div>
             
             <!-- Botón para crear nueva categoría -->
-            <div class="mt-4">
+            <div class="mt-4 flex gap-2">
+              <button
+                @click="openNewTransactionModal()"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Nueva Transacción
+              </button>
               <button
                 @click="openCategoryModal()"
                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -299,6 +493,9 @@
     </div>
     <!-- ===== Page Wrapper End ===== -->
 
+    <!-- Modal para crear/editar transacción -->
+    <include src="./partials/transaction-modal/new-transaction-modal.html" />
+    
     <!-- Modal para crear nueva categoría -->
     <include src="./partials/transaction-modal/new-category-modal.html" />
   </body>

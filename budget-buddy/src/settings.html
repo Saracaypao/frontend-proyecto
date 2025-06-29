@@ -47,7 +47,17 @@
             }
             
             try {
+              // Verificar si el usuario está autenticado
               const token = localStorage.getItem('jwtToken');
+              if (!token) {
+                this.passwordError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
+                this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
+                setTimeout(() => {
+                  window.location.href = '/signin.html';
+                }, 2000);
+                return;
+              }
+              
               const response = await fetch('http://localhost:8081/users/change-password', {
                 method: 'POST',
                 headers: {
@@ -71,15 +81,45 @@
                 setTimeout(() => {
                   this.passwordSuccess = false;
                 }, 5000);
+              } else if (response.status === 401) {
+                // Token expirado o inválido
+                this.passwordError = 'Tu sesión ha expiado. Por favor, inicia sesión nuevamente.';
+                this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('userInfo');
+                setTimeout(() => {
+                  window.location.href = '/signin.html';
+                }, 2000);
+              } else if (response.status === 404) {
+                // Endpoint no encontrado
+                this.passwordError = 'La funcionalidad de cambio de contraseña no está disponible en este momento.';
+                this.showNotification('Funcionalidad no disponible', 'error');
               } else {
-                const data = await response.json();
-                this.passwordError = data.error || 'Error al cambiar la contraseña.';
+                const errorText = await response.text();
+                let errorMessage = 'Error al cambiar la contraseña.';
+                
+                try {
+                  const data = JSON.parse(errorText);
+                  errorMessage = data.error || data.message || errorMessage;
+                } catch (e) {
+                  // Si no es JSON, usar el texto como está
+                  if (errorText) {
+                    errorMessage = errorText;
+                  }
+                }
+                
+                this.passwordError = errorMessage;
                 this.showNotification('Error al cambiar la contraseña', 'error');
               }
             } catch (error) {
               console.error('Error cambiando contraseña:', error);
-              this.passwordError = 'Error de conexión.';
-              this.showNotification('Error de conexión', 'error');
+              if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                this.passwordError = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
+                this.showNotification('Error de conexión', 'error');
+              } else {
+                this.passwordError = 'Error de conexión. Verifica tu conexión a internet.';
+                this.showNotification('Error de conexión', 'error');
+              }
             }
           },
           
@@ -248,4 +288,18 @@
     </div>
     <!-- ===== Page Wrapper End ===== -->
   </body>
+  
+  <!-- Auth Guard -->
+  <script type="module">
+    import { initAuthGuard, updateUserInfo, setupLogoutButton } from './js/auth/auth-guard.js';
+    
+    // Inicializar el guard de autenticación
+    initAuthGuard();
+    
+    // Actualizar información del usuario en el header
+    updateUserInfo();
+    
+    // Configurar botón de logout
+    setupLogoutButton();
+  </script>
 </html> 

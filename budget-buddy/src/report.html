@@ -1,601 +1,699 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Budget Buddy - Reportes</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-50 dark:bg-gray-900">
-  <div x-data="{
-    currentReport: null,
-    loading: false,
-    selectedPeriod: 'general',
-    selectedYear: new Date().getFullYear(),
-    selectedMonth: new Date().getMonth() + 1,
-    startDate: '',
-    endDate: '',
-    last6MonthsData: [],
-    availableYears: [],
-    availableMonths: [],
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BudgetBuddy - Reportes</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body
+    data-page="report"
+    x-data="{ 
+      page: 'report', 
+      loaded: true, 
+      darkMode: false, 
+      stickyMenu: false, 
+      sidebarToggle: false, 
+      scrollTop: false,
+      currentReport: null,
+      loading: false,
+      selectedPeriod: 'general',
+      selectedYear: new Date().getFullYear(),
+      selectedMonth: new Date().getMonth() + 1,
+      startDate: '',
+      endDate: '',
+      last6MonthsData: [],
+      availableYears: [],
+      availableMonths: [],
 
-    async init() {
-      this.availableYears = this.getAvailableYears();
-      this.availableMonths = this.getAvailableMonths();
-      await this.loadGeneralReport();
-      await this.loadLast6MonthsData();
-    },
-
-    async loadGeneralReport() {
-      this.loading = true;
-      try {
-        const response = await fetch('http://localhost:8081/report', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-          }
-        });
-        if (response.ok) {
-          const report = await response.json();
-          this.currentReport = this.formatReportForUI(report);
-          this.renderReport();
-        }
-      } catch (error) {
-        console.error('Error cargando reporte general:', error);
-        this.showNotification('Error cargando reporte general', 'error');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async loadReportByYear() {
-      this.loading = true;
-      try {
-        const response = await fetch(`http://localhost:8081/report?year=${this.selectedYear}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-          }
-        });
-        if (response.ok) {
-          const report = await response.json();
-          this.currentReport = this.formatReportForUI(report);
-          this.renderReport();
-        }
-      } catch (error) {
-        console.error('Error cargando reporte por año:', error);
-        this.showNotification('Error cargando reporte por año', 'error');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async loadReportByMonth() {
-      this.loading = true;
-      try {
-        const response = await fetch(`http://localhost:8081/report?year=${this.selectedYear}&month=${this.selectedMonth}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-          }
-        });
-        if (response.ok) {
-          const report = await response.json();
-          this.currentReport = this.formatReportForUI(report);
-          this.renderReport();
-        }
-      } catch (error) {
-        console.error('Error cargando reporte por mes:', error);
-        this.showNotification('Error cargando reporte por mes', 'error');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async loadReportByDateRange() {
-      if (!this.startDate || !this.endDate) {
-        this.showNotification('Por favor selecciona fechas de inicio y fin', 'error');
-        return;
-      }
-
-      this.loading = true;
-      try {
-        const response = await fetch(`http://localhost:8081/report/range?startDate=${this.startDate}&endDate=${this.endDate}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-          }
-        });
-        if (response.ok) {
-          const report = await response.json();
-          this.currentReport = this.formatReportForUI(report);
-          this.renderReport();
-        }
-      } catch (error) {
-        console.error('Error cargando reporte por rango:', error);
-        this.showNotification('Error cargando reporte por rango', 'error');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async loadLast6MonthsData() {
-      try {
-        this.last6MonthsData = await this.getLast6MonthsReport();
-        this.renderLast6MonthsChart();
-      } catch (error) {
-        console.error('Error cargando datos de 6 meses:', error);
-      }
-    },
-
-    async generateReport() {
-      switch (this.selectedPeriod) {
-        case 'general':
-          await this.loadGeneralReport();
-          break;
-        case 'year':
-          await this.loadReportByYear();
-          break;
-        case 'month':
-          await this.loadReportByMonth();
-          break;
-        case 'range':
-          await this.loadReportByDateRange();
-          break;
-      }
-    },
-
-    renderReport() {
-      if (!this.currentReport) return;
-
-      // Actualizar métricas principales
-      const totalIncomeElement = document.getElementById('report-total-income');
-      const totalExpensesElement = document.getElementById('report-total-expenses');
-      const balanceElement = document.getElementById('report-balance');
-      const transactionsElement = document.getElementById('report-total-transactions');
-      const periodElement = document.getElementById('report-period');
-
-      if (totalIncomeElement) {
-        totalIncomeElement.textContent = `$${this.currentReport.totalIncome.toFixed(2)}`;
-      }
-      if (totalExpensesElement) {
-        totalExpensesElement.textContent = `$${this.currentReport.totalExpenses.toFixed(2)}`;
-      }
-      if (balanceElement) {
-        balanceElement.textContent = `$${this.currentReport.balance.toFixed(2)}`;
-        // Cambiar color según el balance
-        if (this.currentReport.balance >= 0) {
-          balanceElement.classList.add('text-green-600');
-          balanceElement.classList.remove('text-red-600');
-        } else {
-          balanceElement.classList.add('text-red-600');
-          balanceElement.classList.remove('text-green-600');
-        }
-      }
-      if (transactionsElement) {
-        transactionsElement.textContent = this.currentReport.totalTransactions;
-      }
-      if (periodElement) {
-        periodElement.textContent = this.currentReport.period;
-      }
-
-      // Renderizar gráfico del reporte actual
-      this.renderCurrentReportChart();
-    },
-
-    renderCurrentReportChart() {
-      if (!this.currentReport) return;
-
-      const chartData = {
-        labels: ['Ingresos', 'Gastos'],
-        datasets: [{
-          data: [this.currentReport.totalIncome, this.currentReport.totalExpenses],
-          backgroundColor: ['#10B981', '#EF4444'],
-          borderColor: ['#059669', '#DC2626'],
-          borderWidth: 1
-        }]
-      };
-
-      const ctx = document.getElementById('current-report-chart');
-      if (ctx) {
-        this.renderChart(ctx, chartData);
-      }
-    },
-
-    renderLast6MonthsChart() {
-      if (!this.last6MonthsData || this.last6MonthsData.length === 0) return;
-
-      const chartData = {
-        labels: this.last6MonthsData.map(item => item.period),
-        datasets: [
-          {
-            label: 'Ingresos',
-            data: this.last6MonthsData.map(item => item.totalIncome),
-            backgroundColor: '#10B981',
-            borderColor: '#059669',
-            borderWidth: 1
-          },
-          {
-            label: 'Gastos',
-            data: this.last6MonthsData.map(item => item.totalExpenses),
-            backgroundColor: '#EF4444',
-            borderColor: '#DC2626',
-            borderWidth: 1
-          }
-        ]
-      };
-
-      const ctx = document.getElementById('last-6-months-chart');
-      if (ctx) {
-        this.renderChart(ctx, chartData);
-      }
-    },
-
-    renderChart(ctx, chartData) {
-      // Destruir gráfico existente si existe
-      if (ctx.chart) {
-        ctx.chart.destroy();
-      }
-      
-      ctx.chart = new Chart(ctx, {
-        type: 'bar',
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'top',
-            }
-          }
-        }
-      });
-    },
-
-    async getLast6MonthsReport() {
-      try {
-        const currentDate = new Date();
-        const reports = [];
+      async init() {
+        this.darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
+        this.$watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
         
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-          const year = date.getFullYear();
-          const month = date.getMonth() + 1;
+        this.availableYears = this.getAvailableYears();
+        this.availableMonths = this.getAvailableMonths();
+        await this.loadGeneralReport();
+        await this.loadLast6MonthsData();
+      },
+
+      async loadGeneralReport() {
+        this.loading = true;
+        try {
+          const response = await fetch('http://localhost:8081/report', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
           
-          try {
-            const response = await fetch(`http://localhost:8081/report?year=${year}&month=${month}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-              }
-            });
-            if (response.ok) {
-              const report = await response.json();
-              reports.push(this.formatReportForUI(report));
-            } else {
-              // Agregar reporte vacío
-              reports.push({
-                period: `${year}/${month.toString().padStart(2, '0')}`,
-                totalIncome: 0,
-                totalExpenses: 0,
-                balance: 0,
-                totalTransactions: 0,
-                year: year,
-                month: month
-              });
+          if (response.ok) {
+            const report = await response.json();
+            this.currentReport = this.formatReportForUI(report);
+            this.renderReport();
+          } else {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+        } catch (error) {
+          console.error('Error cargando reporte general:', error);
+          this.showNotification('Error cargando reporte general', 'error');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadReportByYear() {
+        this.loading = true;
+        try {
+          const response = await fetch(`http://localhost:8081/report/${this.selectedYear}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
-          } catch (error) {
-            console.warn(`No se pudo obtener reporte para ${year}/${month}:`, error);
-            // Agregar reporte vacío
-            reports.push({
-              period: `${year}/${month.toString().padStart(2, '0')}`,
-              totalIncome: 0,
-              totalExpenses: 0,
-              balance: 0,
-              totalTransactions: 0,
-              year: year,
-              month: month
-            });
+          });
+          
+          if (response.ok) {
+            const report = await response.json();
+            this.currentReport = this.formatReportForUI(report);
+            this.renderReport();
+          } else {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+        } catch (error) {
+          console.error('Error cargando reporte por año:', error);
+          this.showNotification('Error cargando reporte por año', 'error');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadReportByMonth() {
+        this.loading = true;
+        try {
+          const response = await fetch(`http://localhost:8081/report/${this.selectedYear}/${this.selectedMonth}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
+          
+          if (response.ok) {
+            const report = await response.json();
+            this.currentReport = this.formatReportForUI(report);
+            this.renderReport();
+          } else {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+        } catch (error) {
+          console.error('Error cargando reporte por mes:', error);
+          this.showNotification('Error cargando reporte por mes', 'error');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadReportByDateRange() {
+        if (!this.startDate || !this.endDate) {
+          this.showNotification('Por favor selecciona fechas de inicio y fin', 'error');
+          return;
+        }
+
+        this.loading = true;
+        try {
+          const response = await fetch(`http://localhost:8081/report/range?startDate=${this.startDate}&endDate=${this.endDate}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
+          
+          if (response.ok) {
+            const report = await response.json();
+            this.currentReport = this.formatReportForUI(report);
+            this.renderReport();
+          } else {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+        } catch (error) {
+          console.error('Error cargando reporte por rango:', error);
+          this.showNotification('Error cargando reporte por rango', 'error');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadLast6MonthsData() {
+        try {
+          this.last6MonthsData = await this.getLast6MonthsReport();
+          this.renderLast6MonthsChart();
+        } catch (error) {
+          console.error('Error cargando datos de 6 meses:', error);
+        }
+      },
+
+      async generateReport() {
+        switch (this.selectedPeriod) {
+          case 'general':
+            await this.loadGeneralReport();
+            break;
+          case 'year':
+            await this.loadReportByYear();
+            break;
+          case 'month':
+            await this.loadReportByMonth();
+            break;
+          case 'range':
+            await this.loadReportByDateRange();
+            break;
+        }
+      },
+
+      renderReport() {
+        if (!this.currentReport) return;
+
+        // Actualizar métricas principales
+        const totalIncomeElement = document.getElementById('report-total-income');
+        const totalExpensesElement = document.getElementById('report-total-expenses');
+        const balanceElement = document.getElementById('report-balance');
+        const transactionsElement = document.getElementById('report-total-transactions');
+        const periodElement = document.getElementById('report-period');
+
+        if (totalIncomeElement) {
+          totalIncomeElement.textContent = `$${this.currentReport.totalIncome.toFixed(2)}`;
+        }
+        if (totalExpensesElement) {
+          totalExpensesElement.textContent = `$${this.currentReport.totalExpenses.toFixed(2)}`;
+        }
+        if (balanceElement) {
+          balanceElement.textContent = `$${this.currentReport.balance.toFixed(2)}`;
+          // Cambiar color según el balance
+          if (this.currentReport.balance >= 0) {
+            balanceElement.classList.add('text-green-600');
+            balanceElement.classList.remove('text-red-600');
+          } else {
+            balanceElement.classList.add('text-red-600');
+            balanceElement.classList.remove('text-green-600');
           }
         }
-        
-        return reports;
-      } catch (error) {
-        console.error('Error generando reporte de 6 meses:', error);
-        throw error;
+        if (transactionsElement) {
+          transactionsElement.textContent = this.currentReport.totalTransactions;
+        }
+        if (periodElement) {
+          periodElement.textContent = this.currentReport.period;
+        }
+
+        // Renderizar gráfico del reporte actual
+        this.renderCurrentReportChart();
+      },
+
+      renderCurrentReportChart() {
+        if (!this.currentReport) return;
+
+        const chartData = {
+          labels: ['Ingresos', 'Gastos'],
+          datasets: [{
+            data: [this.currentReport.totalIncome, this.currentReport.totalExpenses],
+            backgroundColor: ['#10B981', '#EF4444'],
+            borderColor: ['#059669', '#DC2626'],
+            borderWidth: 1
+          }]
+        };
+
+        const ctx = document.getElementById('current-report-chart');
+        if (ctx) {
+          this.renderChart(ctx, chartData);
+        }
+      },
+
+      renderLast6MonthsChart() {
+        if (!this.last6MonthsData || this.last6MonthsData.length === 0) return;
+
+        const chartData = {
+          labels: this.last6MonthsData.map(item => item.month),
+          datasets: [{
+            label: 'Ingresos',
+            data: this.last6MonthsData.map(item => item.income),
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: '#10B981',
+            borderWidth: 2
+          }, {
+            label: 'Gastos',
+            data: this.last6MonthsData.map(item => item.expenses),
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            borderColor: '#EF4444',
+            borderWidth: 2
+          }]
+        };
+
+        const ctx = document.getElementById('last-6-months-chart');
+        if (ctx) {
+          this.renderChart(ctx, chartData, 'line');
+        }
+      },
+
+      renderChart(ctx, data, type = 'doughnut') {
+        try {
+          // Verificar si Chart.js está disponible
+          if (typeof Chart === 'undefined') {
+            console.warn('Chart.js no está disponible');
+            return;
+          }
+          
+          // Destruir gráfico existente si existe
+          if (ctx.chart) {
+            ctx.chart.destroy();
+          }
+
+          ctx.chart = new Chart(ctx, {
+            type: type,
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                }
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Error renderizando gráfico:', error);
+        }
+      },
+
+      formatReportForUI(report) {
+        return {
+          totalIncome: report.totalIncome || 0,
+          totalExpenses: report.totalExpenses || 0,
+          balance: (report.totalIncome || 0) - (report.totalExpenses || 0),
+          totalTransactions: report.totalTransactions || 0,
+          period: this.getPeriodText(),
+          incomeByCategory: report.incomeByCategory || {},
+          expensesByCategory: report.expensesByCategory || {}
+        };
+      },
+
+      getPeriodText() {
+        switch (this.selectedPeriod) {
+          case 'general':
+            return 'General';
+          case 'year':
+            return `Año ${this.selectedYear}`;
+          case 'month':
+            const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            return `${monthNames[this.selectedMonth - 1]} ${this.selectedYear}`;
+          case 'range':
+            return `${this.startDate} - ${this.endDate}`;
+          default:
+            return 'General';
+        }
+      },
+
+      getAvailableYears() {
+        const currentYear = new Date().getFullYear();
+        const years = [];
+        for (let i = currentYear - 5; i <= currentYear; i++) {
+          years.push(i);
+        }
+        return years;
+      },
+
+      getAvailableMonths() {
+        return [
+          { value: 1, label: 'Enero' },
+          { value: 2, label: 'Febrero' },
+          { value: 3, label: 'Marzo' },
+          { value: 4, label: 'Abril' },
+          { value: 5, label: 'Mayo' },
+          { value: 6, label: 'Junio' },
+          { value: 7, label: 'Julio' },
+          { value: 8, label: 'Agosto' },
+          { value: 9, label: 'Septiembre' },
+          { value: 10, label: 'Octubre' },
+          { value: 11, label: 'Noviembre' },
+          { value: 12, label: 'Diciembre' }
+        ];
+      },
+
+      async getLast6MonthsReport() {
+        try {
+          const response = await fetch('http://localhost:8081/report/last6months', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            // Convertir los nombres de meses a español
+            const monthNames = {
+              'JANUARY': 'Enero', 'FEBRUARY': 'Febrero', 'MARCH': 'Marzo', 'APRIL': 'Abril',
+              'MAY': 'Mayo', 'JUNE': 'Junio', 'JULY': 'Julio', 'AUGUST': 'Agosto',
+              'SEPTEMBER': 'Septiembre', 'OCTOBER': 'Octubre', 'NOVEMBER': 'Noviembre', 'DECEMBER': 'Diciembre'
+            };
+            
+            return data.map(item => ({
+              month: monthNames[item.month] || item.month,
+              income: item.income,
+              expenses: item.expenses
+            }));
+          } else {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+        } catch (error) {
+          console.error('Error obteniendo datos de 6 meses:', error);
+          return [];
+        }
+      },
+
+      exportReport() {
+        if (!this.currentReport) {
+          this.showNotification('No hay reporte para exportar', 'error');
+          return;
+        }
+
+        const data = {
+          periodo: this.getPeriodText(),
+          totalIngresos: this.currentReport.totalIncome,
+          totalGastos: this.currentReport.totalExpenses,
+          balance: this.currentReport.balance,
+          totalTransacciones: this.currentReport.totalTransactions
+        };
+
+        const csv = this.convertToCSV(data);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_${this.getPeriodText().replace(/\s+/g, '_')}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+
+      convertToCSV(data) {
+        const headers = Object.keys(data);
+        const values = Object.values(data);
+        return [headers.join(','), values.join(',')].join('\n');
+      },
+
+      showNotification(message, type = 'info') {
+        // Implementar notificación
+        console.log(`${type.toUpperCase()}: ${message}`);
+      },
+
+      get balanceIcon() {
+        if (!this.currentReport) return '';
+        return this.currentReport.balance >= 0 ? '↗' : '↘';
+      },
+
+      get incomePercentage() {
+        if (!this.currentReport) return '0%';
+        const total = this.currentReport.totalIncome + this.currentReport.totalExpenses;
+        if (total === 0) return '0%';
+        return `${((this.currentReport.totalIncome / total) * 100).toFixed(1)}%`;
+      },
+
+      get expensePercentage() {
+        if (!this.currentReport) return '0%';
+        const total = this.currentReport.totalIncome + this.currentReport.totalExpenses;
+        if (total === 0) return '0%';
+        return `${((this.currentReport.totalExpenses / total) * 100).toFixed(1)}%`;
       }
-    },
+    }"
+    :class="{'dark bg-gray-900': darkMode === true}"
+  >
+    <!-- ===== Preloader Start ===== -->
+    <include src="./partials/preloader.html"></include>
+    <!-- ===== Preloader End ===== -->
 
-    formatReportForUI(report) {
-      return {
-        period: report.period || 'General',
-        totalIncome: report.totalIncome || 0,
-        totalExpenses: report.totalExpenses || 0,
-        balance: report.balance || 0,
-        totalTransactions: report.totalTransactions || 0,
-        currency: report.currency || 'USD',
-        year: report.year,
-        month: report.month,
-        startDate: report.startDate,
-        endDate: report.endDate,
-        daysInRange: report.daysInRange
-      };
-    },
+    <!-- ===== Page Wrapper Start ===== -->
+    <div class="flex h-screen overflow-hidden">
+      <!-- ===== Sidebar Start ===== -->
+      <include src="./partials/sidebar.html"></include>
+      <!-- ===== Sidebar End ===== -->
 
-    getAvailableYears() {
-      const currentYear = new Date().getFullYear();
-      const years = [];
-      for (let year = currentYear; year >= currentYear - 5; year--) {
-        years.push(year);
-      }
-      return years;
-    },
+      <!-- ===== Content Area Start ===== -->
+      <div
+        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
+      >
+        <!-- Small Device Overlay Start -->
+        <include src="./partials/overlay.html" />
+        <!-- Small Device Overlay End -->
 
-    getAvailableMonths() {
-      return [
-        { value: 1, label: 'Enero' },
-        { value: 2, label: 'Febrero' },
-        { value: 3, label: 'Marzo' },
-        { value: 4, label: 'Abril' },
-        { value: 5, label: 'Mayo' },
-        { value: 6, label: 'Junio' },
-        { value: 7, label: 'Julio' },
-        { value: 8, label: 'Agosto' },
-        { value: 9, label: 'Septiembre' },
-        { value: 10, label: 'Octubre' },
-        { value: 11, label: 'Noviembre' },
-        { value: 12, label: 'Diciembre' }
-      ];
-    },
+        <!-- ===== Header Start ===== -->
+        <include src="./partials/header.html" />
+        <!-- ===== Header End ===== -->
 
-    exportReport() {
-      if (!this.currentReport) {
-        this.showNotification('No hay reporte para exportar', 'error');
-        return;
-      }
-
-      const reportData = {
-        ...this.currentReport,
-        exportDate: new Date().toISOString(),
-        generatedBy: 'Budget Buddy'
-      };
-
-      const dataStr = JSON.stringify(reportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `report-${this.currentReport.period.replace(/\s+/g, '-').toLowerCase()}.json`;
-      link.click();
-      
-      URL.revokeObjectURL(url);
-      this.showNotification('Reporte exportado exitosamente', 'success');
-    },
-
-    showNotification(message, type = 'info') {
-      const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' :
-        type === 'error' ? 'bg-red-500 text-white' :
-        'bg-blue-500 text-white'
-      }`;
-      notification.textContent = message;
-      
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
-    },
-
-    // Getters para formateo
-    get formattedBalance() {
-      if (!this.currentReport) return '$0.00';
-      return `$${this.currentReport.balance.toFixed(2)}`;
-    },
-
-    get balanceColor() {
-      if (!this.currentReport) return 'text-gray-600';
-      return this.currentReport.balance >= 0 ? 'text-green-600' : 'text-red-600';
-    },
-
-    get balanceIcon() {
-      if (!this.currentReport) return '';
-      return this.currentReport.balance >= 0 ? '↗' : '↘';
-    },
-
-    get incomePercentage() {
-      if (!this.currentReport) return '0%';
-      const total = this.currentReport.totalIncome + this.currentReport.totalExpenses;
-      if (total === 0) return '0%';
-      return `${((this.currentReport.totalIncome / total) * 100).toFixed(1)}%`;
-    },
-
-    get expensePercentage() {
-      if (!this.currentReport) return '0%';
-      const total = this.currentReport.totalIncome + this.currentReport.totalExpenses;
-      if (total === 0) return '0%';
-      return `${((this.currentReport.totalExpenses / total) * 100).toFixed(1)}%`;
-    }
-  }" x-init="init()">
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-4">
-          <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Reportes Financieros</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button @click="exportReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-              <i class="fas fa-download mr-2"></i>Exportar
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Filtros de Período -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seleccionar Período</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Tipo de Reporte -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Reporte</label>
-            <select x-model="selectedPeriod" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-              <option value="general">General</option>
-              <option value="year">Por Año</option>
-              <option value="month">Por Mes</option>
-              <option value="range">Por Rango</option>
-            </select>
-          </div>
-
-          <!-- Año -->
-          <div x-show="selectedPeriod === 'year' || selectedPeriod === 'month'">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Año</label>
-            <select x-model="selectedYear" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-              <template x-for="year in availableYears" :key="year">
-                <option :value="year" x-text="year"></option>
-              </template>
-            </select>
-          </div>
-
-          <!-- Mes -->
-          <div x-show="selectedPeriod === 'month'">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mes</label>
-            <select x-model="selectedMonth" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-              <template x-for="month in availableMonths" :key="month.value">
-                <option :value="month.value" x-text="month.label"></option>
-              </template>
-            </select>
-          </div>
-
-          <!-- Rango de Fechas -->
-          <div x-show="selectedPeriod === 'range'" class="md:col-span-2">
-            <div class="grid grid-cols-2 gap-4">
+        <!-- ===== Main Content Start ===== -->
+        <main>
+          <!-- Titulo -->
+          <div class="p-4 md:ml-[15px] mt-4">
+            <div class="flex justify-between items-center mb-1">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Inicio</label>
-                <input type="date" x-model="startDate" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+                  Reportes Financieros
+                </h2>
+                <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
+                  Análisis detallado de tus finanzas
+                </span>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Fin</label>
-                <input type="date" x-model="endDate" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <button @click="exportReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                  <i class="fas fa-download mr-2"></i>Exportar
+                </button>
               </div>
             </div>
           </div>
-        </div>
+
+          <!-- Contenido del Reporte -->
+          <div class="p-4 mx-auto w-full max-w-screen-xl md:p-6">
+            <div class="space-y-6">
+              <!-- Filtros de Período -->
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seleccionar Período</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <!-- Tipo de Reporte -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Reporte</label>
+                    <select x-model="selectedPeriod" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      <option value="general">General</option>
+                      <option value="year">Por Año</option>
+                      <option value="month">Por Mes</option>
+                      <option value="range">Por Rango</option>
+                    </select>
+                  </div>
+
+                  <!-- Año -->
+                  <div x-show="selectedPeriod === 'year' || selectedPeriod === 'month'">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Año</label>
+                    <select x-model="selectedYear" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      <template x-for="year in availableYears" :key="year">
+                        <option :value="year" x-text="year"></option>
+                      </template>
+                    </select>
+                  </div>
+
+                  <!-- Mes -->
+                  <div x-show="selectedPeriod === 'month'">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mes</label>
+                    <select x-model="selectedMonth" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      <template x-for="month in availableMonths" :key="month.value">
+                        <option :value="month.value" x-text="month.label"></option>
+                      </template>
+                    </select>
+                  </div>
+
+                  <!-- Rango de Fechas -->
+                  <div x-show="selectedPeriod === 'range'" class="md:col-span-2">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Inicio</label>
+                        <input type="date" x-model="startDate" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha Fin</label>
+                        <input type="date" x-model="endDate" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Métricas Principales -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <!-- Total Ingresos -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-arrow-up text-green-600 dark:text-green-400"></i>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Ingresos</p>
+                      <p id="report-total-income" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Total Gastos -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-arrow-down text-red-600 dark:text-red-400"></i>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Gastos</p>
+                      <p id="report-total-expenses" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Balance -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-blue-600 dark:text-blue-400"></i>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Balance</p>
+                      <p id="report-balance" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Total Transacciones -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-receipt text-purple-600 dark:text-purple-400"></i>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Transacciones</p>
+                      <p id="report-total-transactions" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Información del Período -->
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Período del Reporte</h3>
+                    <p id="report-period" class="text-gray-600 dark:text-gray-400">General</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Porcentajes</p>
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                      <span x-text="incomePercentage"></span> Ingresos | 
+                      <span x-text="expensePercentage"></span> Gastos
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gráficos -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Gráfico del Reporte Actual -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Distribución Actual</h3>
+                  <div class="h-64">
+                    <canvas id="current-report-chart"></canvas>
+                  </div>
+                </div>
+
+                <!-- Gráfico de Últimos 6 Meses -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Últimos 6 Meses</h3>
+                  <div class="h-64">
+                    <canvas id="last-6-months-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loading State -->
+              <div x-show="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
+                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span class="text-gray-900 dark:text-white">Cargando reporte...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <!-- ===== Main Content End ===== -->
       </div>
-
-      <!-- Métricas Principales -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <!-- Total Ingresos -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                <i class="fas fa-arrow-up text-green-600 dark:text-green-400"></i>
-              </div>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Ingresos</p>
-              <p id="report-total-income" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Total Gastos -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                <i class="fas fa-arrow-down text-red-600 dark:text-red-400"></i>
-              </div>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Gastos</p>
-              <p id="report-total-expenses" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Balance -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                <i class="fas fa-chart-line text-blue-600 dark:text-blue-400"></i>
-              </div>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Balance</p>
-              <p id="report-balance" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Total Transacciones -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                <i class="fas fa-receipt text-purple-600 dark:text-purple-400"></i>
-              </div>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Transacciones</p>
-              <p id="report-total-transactions" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
-            </div>
-          </div>
+      <!-- ===== Content Area End ===== -->
     </div>
-   </div>
-
-      <!-- Información del Período -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Período del Reporte</h3>
-            <p id="report-period" class="text-gray-600 dark:text-gray-400">General</p>
-    </div>
-          <div class="text-right">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Porcentajes</p>
-            <p class="text-lg font-semibold text-gray-900 dark:text-white">
-              <span x-text="incomePercentage"></span> Ingresos | 
-              <span x-text="expensePercentage"></span> Gastos
-            </p>
-     </div>
-    </div>
-   </div>
-
-      <!-- Gráficos -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <!-- Gráfico del Reporte Actual -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Distribución Actual</h3>
-          <div class="h-64">
-            <canvas id="current-report-chart"></canvas>
-     </div>
-    </div>
-
-        <!-- Gráfico de Últimos 6 Meses -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Últimos 6 Meses</h3>
-          <div class="h-64">
-            <canvas id="last-6-months-chart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div x-show="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
-          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span class="text-gray-900 dark:text-white">Cargando reporte...</span>
-        </div>
-      </div>
-  </main>
-  </div>
-
+    <!-- ===== Page Wrapper End ===== -->
+  </body>
+  
   <!-- Scripts -->
   <script type="module" src="js/index.js"></script>
- </body>
+  
+  <!-- Auth Guard Simple -->
+  <script type="module">
+    // Verificación simple de autenticación
+    function checkAuth() {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        window.location.href = './signin.html';
+        return;
+      }
+      
+      // Verificar token con el backend
+      fetch('http://localhost:8081/auth/verify', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Token inválido');
+        }
+      })
+      .then(data => {
+        if (data.valid) {
+          // Verificar si el usuario es asesor y redirigir
+          if (data.user.role === 'ADVISOR') {
+            window.location.href = './index.html';
+            return;
+          }
+        } else {
+          throw new Error('Token inválido');
+        }
+      })
+      .catch(error => {
+        console.error('Error verificando token:', error);
+        localStorage.removeItem('jwtToken');
+        window.location.href = './signin.html';
+      });
+    }
+    
+    // Ejecutar verificación al cargar
+    checkAuth();
+    
+    // Configurar botón de logout si existe
+    document.addEventListener('DOMContentLoaded', function() {
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          localStorage.removeItem('jwtToken');
+          localStorage.removeItem('userInfo');
+          window.location.href = './signin.html';
+        });
+      }
+    });
+  </script>
 </html>

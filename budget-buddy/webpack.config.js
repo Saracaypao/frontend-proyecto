@@ -40,6 +40,10 @@ const generateHTMLPlugins = () =>
 module.exports = {
   mode: "development",
   entry: "./src/js/index.js",
+  resolve: {
+    extensions: ['.js', '.jsx', '.json'],
+    modules: ['node_modules']
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, "./build"),
