@@ -1,4 +1,3 @@
-
 function generateTransactionRow(tx, index) {
   const typeClass =
     tx.visibility === "Private"
@@ -6,7 +5,7 @@ function generateTransactionRow(tx, index) {
       : "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-500";
 
   return `
-    <tr class="relative group">
+    <tr class="relative group" data-id="${tx.id}">
       <td class="py-3">
         <div>
           <span class="text-gray-500 text-theme-xs dark:text-gray-400">
@@ -33,7 +32,7 @@ function generateTransactionRow(tx, index) {
 
         <!-- dropdown menu-->
         <div class="relative">
-          <button class="dropdown-toggle text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" data-index="${index}">
+          <button class="dropdown-toggle text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             ⋮
           </button>
           <div class="dropdown-menu absolute right-0 z-10 mt-2 hidden w-32 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
@@ -68,16 +67,11 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
 
   tbody.innerHTML = paginated.map((tx, i) => generateTransactionRow(tx, i)).join("");
 
-  document.addEventListener("click", (e) => {
-    document.querySelectorAll(".dropdown-menu").forEach(menu => {
-      if (!menu.parentElement.contains(e.target)) menu.classList.add("hidden");
-    });
-  });
-
-  document.querySelectorAll(".dropdown-toggle").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+  tbody.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      const dropdown = btn.nextElementSibling;
+      const dropdown = e.target.closest(".dropdown-toggle").nextElementSibling;
       document.querySelectorAll(".dropdown-menu").forEach(menu => {
         if (menu !== dropdown) menu.classList.add("hidden");
       });
@@ -85,28 +79,70 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
     });
   });
 
-  document.querySelectorAll(".edit-btn").forEach((btn, i) => {
-    btn.addEventListener("click", () => {
-      if (onEdit && typeof onEdit === 'function') {
-        onEdit(paginated[i]);
-      } else {
-        alert(`Edit clicked on row ${i + 1}`);
-      }
+  tbody.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const row = e.target.closest("tr");
+      const id = row.dataset.id;
+      const transaction = data.find(tx => tx.id === id);
+      if (onEdit && transaction) onEdit(transaction);
     });
   });
 
-  document.querySelectorAll(".delete-btn").forEach((btn, i) => {
-    btn.addEventListener("click", () => {
-      if (onDelete && typeof onDelete === 'function') {
-        onDelete(paginated[i]);
-      } else {
-        alert(`Delete clicked on row ${i + 1}`);
+  tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const row = e.target.closest("tr");
+      const id = row.dataset.id;
+      const transaction = data.find(tx => tx.id === id);
+      
+      const isConfirmed = await showConfirmationDialog();
+      if (isConfirmed && onDelete && transaction) {
+        onDelete(transaction);
       }
     });
   });
 
   window.currentTransactionPage = page;
   renderPagination(data, data.length, page, pageSize);
+}
+
+function showConfirmationDialog() {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('div');
+    dialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    dialog.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Confirm Delete</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to delete this transaction?</p>
+        <div class="flex justify-end gap-3">
+          <button class="cancel-btn px-4 py-2 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+            Cancel
+          </button>
+          <button class="confirm-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+            Delete
+          </button>
+        </div>
+      </div>
+    `;
+    
+    const confirmBtn = dialog.querySelector('.confirm-btn');
+    const cancelBtn = dialog.querySelector('.cancel-btn');
+    
+    confirmBtn.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+      resolve(true);
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+      resolve(false);
+    });
+    
+    document.body.appendChild(dialog);
+  });
 }
 
 function renderPagination(data, totalItems, currentPage, pageSize) {
@@ -151,6 +187,7 @@ function renderPagination(data, totalItems, currentPage, pageSize) {
 
   container.querySelectorAll("button[data-page]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
+      e.preventDefault();
       const page = Number(e.target.dataset.page);
       renderTransactionTable(data, page, pageSize);
     });

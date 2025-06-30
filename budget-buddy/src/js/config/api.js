@@ -1,6 +1,6 @@
 // api url
 const API_CONFIG = {
-  BASE_URL: 'https://pnc-proyecto-final-grupo-02-s01-yefv.onrender.com',
+  BASE_URL: 'https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com',
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/auth/login',
