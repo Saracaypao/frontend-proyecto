@@ -7,9 +7,7 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-      BudgetBuddy
-    </title>
+    <title>BudgetBuddy</title>
   </head>
   <body
     data-page="dashboard"
@@ -19,41 +17,36 @@
       darkMode: false, 
       stickyMenu: false, 
       sidebarToggle: false, 
-      scrollTop: false,
-      isUserAdvisor: false
+      scrollTop: false
     }"
     x-init="
-         darkMode = JSON.parse(localStorage.getItem('darkMode'));
-         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
-         
-         (() => {
-           // detect user rol
-           try {
-             const token = localStorage.getItem('jwtToken');
-             if (!token) {
-               window.location.href = './signin.html';
-               return;
-             }
-             
-             // check if tokes is valid
-             const payload = JSON.parse(atob(token.split('.')[1]));
-             const currentTime = Date.now() / 1000;
-             if (payload.exp < currentTime) {
-               localStorage.removeItem('jwtToken');
-               window.location.href = './signin.html';
-               return;
-             }
-             
-             if (token) {
-               isUserAdvisor = payload.role === 'ADVISOR';
-             }
-           } catch (error) {
-             console.error('Error verificando rol:', error);
-             localStorage.removeItem('jwtToken');
-             window.location.href = './signin.html';
-           }
-         })()
-       "
+      darkMode = JSON.parse(localStorage.getItem('darkMode'));
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+      
+      (() => {
+        // Check authentication
+        try {
+          const token = localStorage.getItem('jwtToken');
+          if (!token) {
+            window.location.href = './signin.html';
+            return;
+          }
+          
+          // Verify token expiration
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const currentTime = Date.now() / 1000;
+          if (payload.exp < currentTime) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = './signin.html';
+            return;
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+          localStorage.removeItem('jwtToken');
+          window.location.href = './signin.html';
+        }
+      })()
+    "
     :class="{'dark bg-gray-900': darkMode === true}"
   >
     <!-- ===== Preloader Start ===== -->
@@ -67,9 +60,7 @@
       <!-- ===== Sidebar End ===== -->
 
       <!-- ===== Content Area Start ===== -->
-      <div
-        class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto"
-      >
+      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
         <!-- Small Device Overlay Start -->
         <include src="./partials/overlay.html" />
         <!-- Small Device Overlay End -->
@@ -80,118 +71,36 @@
 
         <!-- ===== Main Content Start ===== -->
         <main>
-          <!-- Titulo -->
+          <!-- Title -->
           <div class="p-4 md:ml-[15px] mt-4">
             <div class="mb-1">
               <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-                <span x-text="isUserAdvisor ? 'Advisor panel' : 'Welcome'"></span>
+                Welcome
               </h2>
-                <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                  <span x-text="isUserAdvisor ? 'Summary of your consulting activities' : 'Here\'s a summary of your money this past month'"></span>
-                </span>
+              <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
+                Here's a summary of your money this past month
+              </span>
             </div>
           </div>
+          
           <!-- Metrics and chart area-->
           <div class="p-4 mx-auto w-full max-w-screen-xl md:p-6">
             <div class="space-y-6">
-              <!-- Para usuarios normales -->
-              <template x-if="!isUserAdvisor">
-                <div>
-                  <!-- Metric Group One -->
-                  <div class="w-full mb-9">
-                    <include src="./partials/metric-group/metric-group-01.html" />
-                  </div>
-                  <!-- Chart -->
-                  <div class="w-full mb-6">
-                    <include src="./partials/chart/chart-01.html" />
-                  </div>
-                  <!-- Recent Transactions -->
-                  <div class="w-full">
-                    <include src="./partials/table/tableTrans.html" />
-                  </div>
+              <!-- User Dashboard Content -->
+              <div>
+                <!-- Metric Group One -->
+                <div class="w-full mb-9">
+                  <include src="./partials/metric-group/metric-group-01.html" />
                 </div>
-              </template>
-              
-              <!-- Para asesores -->
-              <template x-if="isUserAdvisor">
-                <div>
-                  <!-- Métricas específicas para asesores -->
-                  <div class="w-full mb-9">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
-                        <div class="flex items-center">
-                          <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                          </div>
-                          <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Asesorías</p>
-                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border-l-4 border-green-500">
-                        <div class="flex items-center">
-                          <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                          </div>
-                          <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Completadas</p>
-                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border-l-4 border-orange-500">
-                        <div class="flex items-center">
-                          <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                          </div>
-                          <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">En Progreso</p>
-                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border-l-4 border-yellow-500">
-                        <div class="flex items-center">
-                          <div class="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                          </div>
-                          <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
-                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Mensaje de bienvenida para asesores -->
-                  <div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bienvenido, Asesor</h3>
-                    <p class="text-gray-600 dark:text-gray-400 mb-4">
-                      Desde aquí puedes gestionar todas tus asesorías financieras. Revisa las solicitudes pendientes, 
-                      inicia nuevas asesorías y completa las que estén en progreso.
-                    </p>
-                    <a href="financialAdv.html" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                      </svg>
-                      Ir a Asesorías
-                    </a>
-                  </div>
+                <!-- Chart -->
+                <div class="w-full mb-6">
+                  <include src="./partials/chart/chart-01.html" />
                 </div>
-              </template>
+                <!-- Recent Transactions -->
+                <div class="w-full">
+                  <include src="./partials/table/tableTrans.html" />
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -194,11 +194,15 @@ export default function loadSigninPage() {
       }));
 
       // Mostrar mensaje de éxito
-      showNotification("¡Inicio de sesión exitoso!", "success");
+      showNotification("Login successful!", "success");
       
       // Redirigir al dashboard
       setTimeout(() => {
-        window.location.href = "/index.html";
+        if (data.role === "ADVISOR") {
+          window.location.href = "/financialAdv.html"; 
+        } else {
+          window.location.href = "/index.html"; 
+        }
       }, 1000);
 
     } catch (err) {

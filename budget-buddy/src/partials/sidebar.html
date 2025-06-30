@@ -96,6 +96,7 @@
           
           <!-- Menu Item Dashboard -->
           <li>
+            <template x-if="!isUserAdvisor">
             <a
               href="index.html"
               class="menu-item group"
@@ -124,6 +125,7 @@
                 Dashboard
               </span>
             </a> <!-- final del bloque de dashboard -->
+            </template>
             <!-- Dropdown Menu End -->
           </li>
           <!-- Menu Item Dashboard -->

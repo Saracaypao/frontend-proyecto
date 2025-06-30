@@ -289,114 +289,54 @@
   </body>
   
   <!-- Auth Guard -->
-<script type="module">
-  // utils
-  function getCurrentPage() {
-    return window.location.pathname.split("/").pop() || "index.html";
-  }
-
-  function isProtectedPage() {
-    const protectedPages = [
-      "index.html",
-      "transactions.html",
-      "report.html",
-      "profile.html",
-      "financialAdv.html",
-      "settings.html",
-    ];
-    return protectedPages.includes(getCurrentPage());
-  }
-
-  function isPublicPage() {
-    const publicPages = ["signin.html", "signup.html", "landing.html"];
-    return publicPages.includes(getCurrentPage());
-  }
-
-  // check token
-  function checkAuth() {
-    const token = localStorage.getItem("jwtToken");
-    if (!token) {
-      if (isProtectedPage()) {
-        window.location.href = "./signin.html";
-      }
-      return;
-    }
-
-    fetch("http://localhost:8081/auth/verify", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Token inválido");
-        return res.json();
-      })
-      .then((data) => {
-        if (data.valid) {
-          const user = data.user;
-          // if advisor
-          if (user.role === "ADVISOR" && isProtectedPage()) {
-            window.location.href = "./index.html";
-            return;
-          }
-
-          // save users info if not 
-          if (!localStorage.getItem("userInfo")) {
-            const userInfo = {
-              fullName: user.firstName + " " + user.lastName,
-              email: user.email,
-            };
-            localStorage.setItem("userInfo", JSON.stringify(userInfo));
-          }
-
-          updateUserInfo(); //show in header
-        } else {
-          throw new Error("Token inválido");
-        }
-      })
-      .catch((err) => {
-        console.error("Auth error:", err.message);
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("userInfo");
-        window.location.href = "./signin.html";
-      });
-  }
-
-  // update header data
-  function updateUserInfo() {
-    const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-    const nameEl = document.getElementById("userName");
-    const emailEl = document.getElementById("userEmail");
-
-    if (nameEl && userInfo.fullName) nameEl.textContent = userInfo.fullName;
-    if (emailEl && userInfo.email) emailEl.textContent = userInfo.email;
-  }
-
-  // logout
-  function setupLogout() {
-    document.addEventListener("DOMContentLoaded", () => {
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          localStorage.removeItem("jwtToken");
-          localStorage.removeItem("userInfo");
-          window.location.href = "./signin.html";
-        });
-      }
-    });
-  }
-
-  // init all
-  checkAuth();
-  setupLogout();
-
-  // validate every 5 min
-  setInterval(() => {
-    if (isProtectedPage() && !localStorage.getItem("jwtToken")) {
+// check token
+function checkAuth() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) {
+    if (isProtectedPage()) {
       window.location.href = "./signin.html";
     }
-  }, 5 * 60 * 1000);
-</script>
+    return;
+  }
+
+  fetch("http://localhost:8081/auth/verify", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Token inválido");
+      return res.json();
+    })
+    .then((data) => {
+      if (data.valid) {
+        const user = data.user;
+
+        if (user.role === "ADVISOR" && isProtectedPage() && getCurrentPage() !== "settings.html") {
+          window.location.href = "./index.html";
+          return;
+        }
+
+        // save users info if not 
+        if (!localStorage.getItem("userInfo")) {
+          const userInfo = {
+            fullName: user.firstName + " " + user.lastName,
+            email: user.email,
+          };
+          localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        }
+
+        updateUserInfo(); //show in header
+      } else {
+        throw new Error("Token inválido");
+      }
+    })
+    .catch((err) => {
+      console.error("Auth error:", err.message);
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userInfo");
+      window.location.href = "./signin.html";
+    });
+}
 
 </html> 
