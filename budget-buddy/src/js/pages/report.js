@@ -111,7 +111,6 @@ export default function reportComponent() {
     renderReport() {
       if (!this.currentReport) return;
 
-      // Actualizar métricas principales
       const totalIncomeElement = document.getElementById('report-total-income');
       const totalExpensesElement = document.getElementById('report-total-expenses');
       const balanceElement = document.getElementById('report-balance');
@@ -126,7 +125,6 @@ export default function reportComponent() {
       }
       if (balanceElement) {
         balanceElement.textContent = `$${this.currentReport.balance.toFixed(2)}`;
-        // Cambiar color según el balance
         if (this.currentReport.balance >= 0) {
           balanceElement.classList.add('text-green-600');
           balanceElement.classList.remove('text-red-600');
@@ -142,7 +140,6 @@ export default function reportComponent() {
         periodElement.textContent = this.currentReport.period;
       }
 
-      // Renderizar gráfico del reporte actual
       this.renderCurrentReportChart();
     },
 
@@ -235,7 +232,6 @@ export default function reportComponent() {
       }, 3000);
     },
 
-    // Getters para formateo
     get formattedBalance() {
       if (!this.currentReport) return '$0.00';
       return `$${this.currentReport.balance.toFixed(2)}`;

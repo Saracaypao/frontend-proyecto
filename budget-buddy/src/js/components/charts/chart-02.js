@@ -1,12 +1,11 @@
 import { Chart, registerables } from 'chart.js';
 
-// Registrar todos los componentes de Chart.js
 Chart.register(...registerables);
 
 let reportChart = null;
 
 export function renderReportChart(canvas, data) {
-  // Destruir gráfico existente si hay uno
+
   if (reportChart) {
     reportChart.destroy();
   }
@@ -50,7 +49,7 @@ export function renderReportChart(canvas, data) {
 }
 
 export function renderBarChart(canvas, data) {
-  // Destruir gráfico existente si hay uno
+
   if (reportChart) {
     reportChart.destroy();
   }
@@ -99,7 +98,7 @@ export function renderBarChart(canvas, data) {
 }
 
 export function renderLineChart(canvas, data) {
-  // Destruir gráfico existente si hay uno
+
   if (reportChart) {
     reportChart.destroy();
   }

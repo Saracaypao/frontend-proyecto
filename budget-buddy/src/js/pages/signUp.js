@@ -5,7 +5,6 @@ export default function loadSignupPage() {
   const root = document.getElementById("signup-root");
   if (!root) return;
 
-  // local states
   let showPassword = false;
 
 root.innerHTML = `
@@ -55,7 +54,7 @@ root.innerHTML = `
             />
           </div>
           
-          <!-- Last Name -->
+          <!-- last name -->
           <div>
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Last Name <span class="text-red-500">*</span>
@@ -270,7 +269,6 @@ root.innerHTML = `
   toggle("togglePassword",        "password",         "eyeOpenIcon",        "eyeCloseIcon");
   toggle("toggleConfirmPassword", "confirmPassword",  "eyeOpenIconConfirm", "eyeCloseIconConfirm");
 
-  // Role selection handling
   const roleInputs = document.querySelectorAll('input[name="role"]');
   const roleOptions = document.querySelectorAll('.role-option');
   
@@ -291,10 +289,8 @@ root.innerHTML = `
     input.addEventListener('change', updateRoleSelection);
   });
   
-  // Initialize role selection
   updateRoleSelection();
 
-  // validate password match
   const passwordMatchError = document.getElementById("passwordMatchError");
   function validatePasswordMatch() {
     const pwd  = document.getElementById("password").value;
@@ -309,7 +305,6 @@ root.innerHTML = `
   document.getElementById("password")?.addEventListener("input", validatePasswordMatch);
   document.getElementById("confirmPassword")?.addEventListener("input", validatePasswordMatch);
 
-  // submit form and backend request
 const signupForm = document.getElementById("signup-form");
 signupForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -323,7 +318,6 @@ signupForm?.addEventListener("submit", async (e) => {
     role:      document.querySelector('input[name="role"]:checked').value,
   };
 
-  // Mostrar loading
   const submitBtn = signupForm.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
   submitBtn.textContent = "Creating account...";
@@ -335,10 +329,8 @@ signupForm?.addEventListener("submit", async (e) => {
       body: JSON.stringify(payload),
     });
 
-    // Mostrar mensaje de éxito
     showNotification("Account created successfully! Redirecting to login...", "success");
     
-    // Redirigir al login después de un breve delay
     setTimeout(() => {
       window.location.href = "/signin.html";
     }, 2000);
@@ -346,10 +338,8 @@ signupForm?.addEventListener("submit", async (e) => {
   } catch (err) {
     console.error("Error de registro:", err);
     
-    // Mostrar mensaje de error más específico
     let errorMessage = "Error al registrar usuario. Intenta nuevamente.";
     
-    // Verificar si es un error de email ya registrado
     if (err.message.includes("This email is already in use") || 
         err.message.includes("email is already in use") ||
         err.message.includes("already in use") ||
@@ -366,13 +356,12 @@ signupForm?.addEventListener("submit", async (e) => {
     
     showNotification(errorMessage, "error");
   } finally {
-    // Restaurar botón
+
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
   }
 });
 
-  // Función para mostrar notificaciones
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm transform transition-all duration-300 ${
@@ -381,7 +370,6 @@ signupForm?.addEventListener("submit", async (e) => {
       'bg-blue-500 text-white border-l-4 border-blue-600'
     }`;
     
-    // Agregar icono según el tipo
     const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
     notification.innerHTML = `
       <div class="flex items-center">
@@ -392,13 +380,11 @@ signupForm?.addEventListener("submit", async (e) => {
     
     document.body.appendChild(notification);
     
-    // Animación de entrada
     notification.style.transform = 'translateX(100%)';
     setTimeout(() => {
       notification.style.transform = 'translateX(0)';
     }, 100);
     
-    // Auto-remover después de 5 segundos
     setTimeout(() => {
       notification.style.transform = 'translateX(100%)';
       setTimeout(() => {

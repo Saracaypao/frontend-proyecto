@@ -5,7 +5,6 @@ class ReportService {
     this.currentReport = null;
   }
 
-  // Obtener reporte general
   async getGeneralReport() {
     try {
       const report = await apiRequest(API_CONFIG.ENDPOINTS.REPORTS.GENERAL);
@@ -17,7 +16,6 @@ class ReportService {
     }
   }
 
-  // Obtener reporte por año
   async getReportByYear(year) {
     try {
       const report = await apiRequest(`${API_CONFIG.ENDPOINTS.REPORTS.BY_YEAR}/${year}`);
@@ -29,7 +27,6 @@ class ReportService {
     }
   }
 
-  // Obtener reporte por mes
   async getReportByMonth(year, month) {
     try {
       const report = await apiRequest(`${API_CONFIG.ENDPOINTS.REPORTS.BY_MONTH}/${year}/${month}`);
@@ -41,7 +38,6 @@ class ReportService {
     }
   }
 
-  // Obtener reporte por rango de fechas
   async getReportByDateRange(startDate, endDate) {
     try {
       const queryParams = new URLSearchParams({
@@ -57,7 +53,6 @@ class ReportService {
     }
   }
 
-  // Formatear reporte para mostrar en la UI
   formatReportForUI(report) {
     return {
       period: report.period || 'General',
@@ -74,7 +69,6 @@ class ReportService {
     };
   }
 
-  // Generar reporte de los últimos 6 meses
   async getLast6MonthsReport() {
     try {
       const currentDate = new Date();
@@ -90,7 +84,7 @@ class ReportService {
           reports.push(this.formatReportForUI(report));
         } catch (error) {
           console.warn(`No se pudo obtener reporte para ${year}/${month}:`, error);
-          // Agregar reporte vacío
+          
           reports.push({
             period: `${year}/${month.toString().padStart(2, '0')}`,
             totalIncome: 0,
@@ -110,7 +104,6 @@ class ReportService {
     }
   }
 
-  // Obtener años disponibles para reportes
   getAvailableYears() {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -120,7 +113,6 @@ class ReportService {
     return years;
   }
 
-  // Obtener meses disponibles
   getAvailableMonths() {
     return [
       { value: 1, label: 'Enero' },
@@ -139,6 +131,5 @@ class ReportService {
   }
 }
 
-// Instancia singleton
 const reportService = new ReportService();
 export default reportService; 

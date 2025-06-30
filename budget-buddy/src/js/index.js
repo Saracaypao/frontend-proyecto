@@ -1,6 +1,4 @@
-// import "jsvectormap/dist/jsvectormap.min.css";
-// import "flatpickr/dist/flatpickr.min.css";
-// import "dropzone/dist/dropzone.css";
+
 import "../css/style.css";
 
 import Alpine from "alpinejs";
@@ -8,13 +6,11 @@ import persist from "@alpinejs/persist";
 import flatpickr from "flatpickr";
 import Dropzone from "dropzone";
 
-// Importar servicios y utilidades
 import { initAuthGuard, updateUserInfo, setupLogoutButton, isAuthenticated } from "./auth/auth-guard.js";
 import transactionService from "./services/transactionService.js";
 import categoryService from "./services/categoryService.js";
 import reportService from "./services/reportService.js";
 
-// Importar componentes
 import chart03 from "./components/charts/chart-03";
 import chart01 from "./components/charts/chart-01";
 import { loadCurrentMonthMetrics } from "./components/dashboard-metrics";
@@ -27,32 +23,25 @@ import loadLandingPage from "./pages/landing";
 import "./components/calendar-init.js";
 import "./components/image-resize";
 
-// Importaciones de páginas
 import reportComponent from './pages/report.js';
 import financialAdviceComponent from './pages/financialAdvice.js';
 
-// Configurar Alpine.js
 Alpine.plugin(persist);
 window.Alpine = Alpine;
 
-// Registrar componentes globales
 Alpine.data('transactionsComponent', transactionsComponent);
 Alpine.data('reportComponent', reportComponent);
 Alpine.data('financialAdviceComponent', financialAdviceComponent);
 
-// Inicializar Alpine.js
 Alpine.start();
 
-// Función para inicializar la aplicación
 async function initializeApp() {
   try {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     
-    // Verificar si estamos en una página pública
     const publicPages = ['signin.html', 'signup.html', 'landing.html'];
     const isPublicPage = publicPages.includes(currentPage);
     
-    // Solo verificar autenticación si no estamos en una página pública
     if (!isPublicPage) {
       if (!isAuthenticated()) {
         window.location.href = '/signin.html';
@@ -60,26 +49,20 @@ async function initializeApp() {
       }
     }
     
-    // Inicializar el guard de autenticación (esto manejará las redirecciones)
     initAuthGuard();
     
-    // Solo inicializar componentes de la aplicación si el usuario está autenticado
     if (isAuthenticated()) {
-      // Actualizar información del usuario en el header
+
       updateUserInfo();
       
-      // Configurar botón de logout
       setupLogoutButton();
       
-      // Cargar categorías si estamos en una página que las necesita
       if (['index.html', 'transactions.html', 'report.html'].includes(currentPage)) {
         await categoryService.loadCategories();
       }
       
-      // Inicializar componentes específicos de la página
       initializePageComponents(currentPage);
     } else {
-      // Si estamos en una página pública, inicializar solo esa página
       if (isPublicPage) {
         initializePageComponents(currentPage);
       }
@@ -90,7 +73,6 @@ async function initializeApp() {
   }
 }
 
-// Función para inicializar componentes específicos de cada página
 function initializePageComponents(page) {
   switch (page) {
     case 'index.html':
@@ -114,13 +96,10 @@ function initializePageComponents(page) {
   }
 }
 
-// Inicializar dashboard
 async function initializeDashboard() {
   try {
-    // Cargar métricas del mes actual
     await loadCurrentMonthMetrics();
-    
-    // Cargar transacciones recientes
+
     const latestTransactions = await transactionService.getLatestTransactions();
     if (latestTransactions.length > 0) {
       const formattedTransactions = latestTransactions.map(t => transactionService.formatTransactionForUI(t));
@@ -129,28 +108,23 @@ async function initializeDashboard() {
       renderRecentTransactions([]);
     }
     
-    // Inicializar gráficos
     chart01();
     chart03();
     
   } catch (error) {
     console.error('Error inicializando dashboard:', error);
-    // Mostrar mensaje de error en las transacciones recientes
     renderRecentTransactions([]);
   }
 }
 
-// Inicializar página de transacciones
 async function initializeTransactionsPage() {
   try {
-    // Cargar transacciones
     const transactions = await transactionService.loadTransactions();
     if (transactions.length > 0) {
       window.transactions = transactions.map(t => transactionService.formatTransactionForUI(t));
       renderTransactionTable(window.transactions, 1, 5);
     }
     
-    // Inicializar componente de transacciones
     if (typeof transactionsComponent === 'function') {
       transactionsComponent();
     }
@@ -160,40 +134,33 @@ async function initializeTransactionsPage() {
   }
 }
 
-// Inicializar página de reportes
 async function initializeReportPage() {
   try {
-    // El componente reportComponent ya está registrado en Alpine.js
-    // y se inicializará automáticamente cuando Alpine.js procese el DOM
+
   } catch (error) {
     console.error('Error inicializando página de reportes:', error);
   }
 }
 
-// Inicializar Dropzone
 const dropzoneArea = document.querySelectorAll("#demo-upload");
 if (dropzoneArea.length) {
   let myDropzone = new Dropzone("#demo-upload", { url: "/file/post" });
 }
 
-// Inicializar la aplicación cuando el DOM esté listo
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
   initializeApp();
 }
 
-// Exportar servicios para uso global
 window.transactionService = transactionService;
 window.categoryService = categoryService;
 window.reportService = reportService;
 
-// Hacer que los componentes estén disponibles globalmente
 window.reportComponent = reportComponent;
 window.transactionsComponent = transactionsComponent;
 window.financialAdviceComponent = financialAdviceComponent;
 
-// Init flatpickr
 flatpickr(".datepicker", {
   mode: "range",
   static: true,
@@ -216,29 +183,24 @@ flatpickr(".datepicker", {
   },
 });
 
-// Get the current year
 const year = document.getElementById("year");
 if (year) {
   year.textContent = new Date().getFullYear();
 }
 
-// For Copy//
 document.addEventListener("DOMContentLoaded", () => {
   const copyInput = document.getElementById("copy-input");
   if (copyInput) {
-    // Select the copy button and input field
     const copyButton = document.getElementById("copy-button");
     const copyText = document.getElementById("copy-text");
     const websiteInput = document.getElementById("website-input");
 
-    // Event listener for the copy button
     copyButton.addEventListener("click", () => {
-      // Copy the input value to the clipboard
+
       navigator.clipboard.writeText(websiteInput.value).then(() => {
-        // Change the text to "Copied"
+
         copyText.textContent = "Copied";
 
-        // Reset the text back to "Copy" after 2 seconds
         setTimeout(() => {
           copyText.textContent = "Copy";
         }, 2000);
@@ -251,28 +213,25 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("search-input");
   const searchButton = document.getElementById("search-button");
 
-  if (!searchInput || !searchButton) return; // Prevent error if not present
+  if (!searchInput || !searchButton) return; 
 
-  // Function to focus the search input
   function focusSearchInput() {
     searchInput.focus();
   }
 
-  // Add click event listener to the search button
   searchButton.addEventListener("click", focusSearchInput);
 
-  // Add keyboard event listener for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
   document.addEventListener("keydown", function (event) {
     if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-      event.preventDefault(); // Prevent the default browser behavior
+      event.preventDefault(); 
       focusSearchInput();
     }
   });
 
-  // Add keyboard event listener for "/" key
+
   document.addEventListener("keydown", function (event) {
     if (event.key === "/" && document.activeElement !== searchInput) {
-      event.preventDefault(); // Prevent the "/" character from being typed
+      event.preventDefault(); 
       focusSearchInput();
     }
   });

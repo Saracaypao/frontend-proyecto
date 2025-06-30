@@ -4,25 +4,19 @@ import listPlugin from "@fullcalendar/list";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
-/*========Calender Js=========*/
-/*==========================*/
 
 document.addEventListener("DOMContentLoaded", function () {
   const calendarWrapper = document.querySelector("#calendar");
 
   if (calendarWrapper) {
-    /*=================*/
-    //  Calender Date variable
-    /*=================*/
+
     const newDate = new Date();
     const getDynamicMonth = () => {
       const month = newDate.getMonth() + 1;
       return month < 10 ? `0${month}` : `${month}`;
     };
 
-    /*=================*/
-    // Calender Modal Elements
-    /*=================*/
+
     const getModalTitleEl = document.querySelector("#event-title");
     const getModalStartDateEl = document.querySelector("#event-start-date");
     const getModalEndDateEl = document.querySelector("#event-end-date");
@@ -35,9 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
       Warning: "warning",
     };
 
-    /*=====================*/
-    // Calendar Elements and options
-    /*=====================*/
+
     const calendarEl = document.querySelector("#calendar");
 
     const calendarHeaderToolbar = {
@@ -114,9 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     ];
 
-    /*=====================*/
-    // Modal Functions
-    /*=====================*/
+
     const openModal = () => {
       document.getElementById("eventModal").style.display = "flex";
     };
@@ -126,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
       resetModalFields();
     };
 
-    // Close modal when clicking outside of it
+
     window.onclick = function (event) {
       const modal = document.getElementById("eventModal");
       if (event.target === modal) {
@@ -134,9 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     };
 
-    /*=====================*/
-    // Calendar Select fn.
-    /*=====================*/
+
     const calendarSelect = (info) => {
       resetModalFields();
 
@@ -148,9 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
       getModalTitleEl.value = "";
     };
 
-    /*=====================*/
-    // Calendar AddEvent fn.
-    /*=====================*/
+
     const calendarAddEvent = () => {
       const currentDate = new Date();
       const dd = String(currentDate.getDate()).padStart(2, "0");
@@ -164,9 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
       getModalStartDateEl.value = combineDate;
     };
 
-    /*=====================*/
-    // Calender Event Function
-    /*=====================*/
+
     const calendarEventClick = (info) => {
       const eventObj = info.event;
 
@@ -195,9 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     };
 
-    /*=====================*/
-    // Active Calender
-    /*=====================*/
+
     const calendar = new Calendar(calendarEl, {
       plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
       selectable: true,
@@ -221,9 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
 
-    /*=====================*/
-    // Update Calender Event
-    /*=====================*/
+
     getModalUpdateBtnEl.addEventListener("click", () => {
       const getPublicID = getModalUpdateBtnEl.dataset.fcEventPublicId;
       const getTitleUpdatedValue = getModalTitleEl.value;
@@ -245,9 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
       closeModal();
     });
 
-    /*=====================*/
-    // Add Calender Event
-    /*=====================*/
+
     getModalAddBtnEl.addEventListener("click", () => {
       const getModalCheckedRadioBtnEl = document.querySelector(
         'input[name="event-level"]:checked',
@@ -261,7 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
         : "";
 
       calendar.addEvent({
-        id: Date.now(), // Use unique ID based on timestamp
+        id: Date.now(), 
         title: getTitleValue,
         start: setModalStartDateValue,
         end: setModalEndDateValue,
@@ -271,12 +249,9 @@ document.addEventListener("DOMContentLoaded", function () {
       closeModal();
     });
 
-    /*=====================*/
-    // Calendar Init
-    /*=====================*/
+
     calendar.render();
 
-    // Reset modal fields when hidden
     document.getElementById("eventModal").addEventListener("click", (event) => {
       if (event.target.classList.contains("modal-close-btn")) {
         closeModal();
@@ -301,7 +276,6 @@ document.addEventListener("DOMContentLoaded", function () {
         resetModalFields();
       });
 
-    // Close modal when clicking on close button or outside modal
     document.querySelectorAll(".modal-close-btn").forEach((btn) => {
       btn.addEventListener("click", closeModal);
     });

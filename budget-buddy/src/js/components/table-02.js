@@ -92,7 +92,7 @@ const financialData = [
   }
 ];
 
-// functtion to export financial data for use in other components
+// function to export financial data for use in other components
 export let financialFilteredData = [...financialData];
 const pageSize = 5;
 
@@ -112,14 +112,12 @@ export function renderFinancialTable(data = financialFilteredData, page = 1) {
     </tr>
   `).join("");
 
-  // listener for each row to update the transaction card showing details
   tbody.querySelectorAll("tr").forEach((row, idx) => {
     row.addEventListener("click", () => {
       updateTransactionCard(paginated[idx]);
     });
   });
 
-  // showing the first transaction details by default
   if (paginated.length > 0) {
     updateTransactionCard(paginated[0]);
   }

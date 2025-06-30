@@ -9,10 +9,8 @@ class AdviceService {
     this.userRole = null;
   }
 
-  // Obtener rol del usuario (ADVISOR o USER)
   async getUserRole() {
     try {
-      // Obtener el rol del usuario desde el token JWT
       const token = localStorage.getItem('jwtToken');
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -25,7 +23,6 @@ class AdviceService {
     }
   }
 
-  // Crear una nueva solicitud de asesoría
   async createAdviceRequest(requestData) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.CREATE_REQUEST, {
@@ -39,7 +36,6 @@ class AdviceService {
     }
   }
 
-  // Obtener solicitudes pendientes (para asesores)
   async getPendingRequests() {
     try {
       this.pendingRequests = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.GET_PENDING_REQUESTS);
@@ -50,7 +46,6 @@ class AdviceService {
     }
   }
 
-  // Obtener mis solicitudes (para usuarios)
   async getMyRequests() {
     try {
       this.myRequests = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.GET_MY_REQUESTS);
@@ -61,7 +56,6 @@ class AdviceService {
     }
   }
 
-  // Obtener mis asignaciones (para asesores)
   async getMyAssignments() {
     try {
       this.myAssignments = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.GET_MY_ASSIGNMENTS);
@@ -72,7 +66,6 @@ class AdviceService {
     }
   }
 
-  // Aceptar una solicitud de asesoría
   async acceptRequest(requestId) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.ACCEPT_REQUEST(requestId), {
@@ -85,7 +78,6 @@ class AdviceService {
     }
   }
 
-  // Iniciar asesoría
   async startAdvice(requestId) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.START_ADVICE(requestId), {
@@ -98,7 +90,6 @@ class AdviceService {
     }
   }
 
-  // Completar solicitud
   async completeRequest(requestId) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.COMPLETE_REQUEST(requestId), {
@@ -111,7 +102,6 @@ class AdviceService {
     }
   }
 
-  // Cancelar solicitud
   async cancelRequest(requestId) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.CANCEL_REQUEST(requestId), {
@@ -124,7 +114,6 @@ class AdviceService {
     }
   }
 
-  // Obtener reporte de una solicitud (para asesores)
   async getReport(requestId) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.GET_REPORT(requestId));
@@ -135,7 +124,6 @@ class AdviceService {
     }
   }
 
-  // Proporcionar asesoría (para asesores)
   async provideAdvice(requestId, advice) {
     try {
       const response = await apiRequest(API_CONFIG.ENDPOINTS.ADVICE.PROVIDE_ADVICE(requestId), {
@@ -149,7 +137,6 @@ class AdviceService {
     }
   }
 
-  // Formatear solicitud para mostrar en la UI
   formatRequestForUI(request) {
     return {
       id: request.id,
@@ -171,7 +158,6 @@ class AdviceService {
     };
   }
 
-  // Obtener etiqueta del estado
   getStatusLabel(status) {
     const labels = {
       'PENDING': 'Pendiente',
@@ -183,7 +169,6 @@ class AdviceService {
     return labels[status] || status;
   }
 
-  // Obtener color del estado
   getStatusColor(status) {
     const colors = {
       'PENDING': 'text-yellow-600 bg-yellow-100',
@@ -195,7 +180,6 @@ class AdviceService {
     return colors[status] || 'text-gray-600 bg-gray-100';
   }
 
-  // Verificar si el usuario actual es un advisor
   async isAdvisor() {
     if (!this.userRole) {
       this.userRole = await this.getUserRole();
@@ -203,7 +187,6 @@ class AdviceService {
     return this.userRole === 'ADVISOR';
   }
 
-  // Limpiar caché
   clearCache() {
     this.pendingRequests = [];
     this.myRequests = [];
@@ -212,6 +195,5 @@ class AdviceService {
   }
 }
 
-// Instancia singleton
 const adviceService = new AdviceService();
 export default adviceService; 

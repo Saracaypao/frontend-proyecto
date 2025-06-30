@@ -1,4 +1,4 @@
-// function that generates table rows for transactions
+
 function generateTransactionRow(tx, index) {
   const typeClass =
     tx.visibility === "Private"
@@ -68,14 +68,12 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
 
   tbody.innerHTML = paginated.map((tx, i) => generateTransactionRow(tx, i)).join("");
 
-  // this will close any open dropdown menus when clicking outside of them
   document.addEventListener("click", (e) => {
     document.querySelectorAll(".dropdown-menu").forEach(menu => {
       if (!menu.parentElement.contains(e.target)) menu.classList.add("hidden");
     });
   });
 
-    // assign functionality to dropdown toggle buttons
   document.querySelectorAll(".dropdown-toggle").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -87,7 +85,6 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
     });
   });
 
-    // this will assign functionality to the Edit and Delete button
   document.querySelectorAll(".edit-btn").forEach((btn, i) => {
     btn.addEventListener("click", () => {
       if (onEdit && typeof onEdit === 'function') {
@@ -112,7 +109,6 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
   renderPagination(data, data.length, page, pageSize);
 }
 
-// function to render pagination controls
 function renderPagination(data, totalItems, currentPage, pageSize) {
   const container = document.getElementById("pagination");
   if (!container) return;
@@ -161,7 +157,6 @@ function renderPagination(data, totalItems, currentPage, pageSize) {
   });
 }
 
-// Función para renderizar transacciones recientes en el dashboard
 export function renderRecentTransactions(transactions = []) {
   const tbody = document.getElementById("recent-transactions-tbody");
   if (!tbody) return;
@@ -177,7 +172,6 @@ export function renderRecentTransactions(transactions = []) {
     return;
   }
 
-  // Limitar a las últimas 5 transacciones
   const recentTransactions = transactions.slice(0, 5);
   
   tbody.innerHTML = recentTransactions.map((tx, i) => `

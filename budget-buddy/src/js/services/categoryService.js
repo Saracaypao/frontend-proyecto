@@ -6,7 +6,6 @@ class CategoryService {
     this.loaded = false;
   }
 
-  // Cargar todas las categorías
   async loadCategories() {
     if (this.loaded) return this.categories;
     
@@ -20,7 +19,6 @@ class CategoryService {
     }
   }
 
-  // Obtener categoría por ID
   async getCategoryById(id) {
     try {
       return await apiRequest(API_CONFIG.ENDPOINTS.CATEGORIES.GET_BY_ID(id));
@@ -30,7 +28,6 @@ class CategoryService {
     }
   }
 
-  // Crear nueva categoría
   async createCategory(categoryData) {
     try {
       const newCategory = await apiRequest(API_CONFIG.ENDPOINTS.CATEGORIES.CREATE, {
@@ -38,7 +35,6 @@ class CategoryService {
         body: JSON.stringify(categoryData)
       });
       
-      // Actualizar la lista local
       this.categories.push(newCategory);
       return newCategory;
     } catch (error) {
@@ -47,14 +43,12 @@ class CategoryService {
     }
   }
 
-  // Eliminar categoría
   async deleteCategory(id) {
     try {
       await apiRequest(API_CONFIG.ENDPOINTS.CATEGORIES.DELETE(id), {
         method: 'DELETE'
       });
       
-      // Actualizar la lista local
       this.categories = this.categories.filter(cat => cat.id !== id);
       return true;
     } catch (error) {
@@ -63,7 +57,6 @@ class CategoryService {
     }
   }
 
-  // Obtener categorías para un select
   getCategoriesForSelect() {
     return this.categories.map(category => ({
       value: category.id,
@@ -71,19 +64,16 @@ class CategoryService {
     }));
   }
 
-  // Obtener nombre de categoría por ID
   getCategoryName(id) {
     const category = this.categories.find(cat => cat.id === id);
     return category ? category.name : 'Sin categoría';
   }
 
-  // Limpiar caché
   clearCache() {
     this.categories = [];
     this.loaded = false;
   }
 }
 
-// Instancia singleton
 const categoryService = new CategoryService();
 export default categoryService; 

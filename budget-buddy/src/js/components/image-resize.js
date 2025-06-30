@@ -1,7 +1,3 @@
-/*
- * @author https://twitter.com/blurspline / https://github.com/zz85
- * See post @ http://www.lab4games.net/zz85/blog/2014/11/15/resizing-moving-snapping-windows-with-js-css/
- */
 
 if (document.querySelectorAll("#pane").length) {
   ("use strict");
@@ -14,7 +10,6 @@ if (document.querySelectorAll("#pane").length) {
   var FULLSCREEN_MARGINS = -10;
   var MARGINS = 4;
 
-  // End of what's configurable.
   var clicked = null;
   var onRightEdge, onBottomEdge, onLeftEdge, onTopEdge;
 
@@ -40,11 +35,6 @@ if (document.querySelectorAll("#pane").length) {
     setBounds(ghostpane, b.left, b.top, b.width, b.height);
     ghostpane.style.opacity = 0;
 
-    // var b = ghostpane.getBoundingClientRect();
-    // ghostpane.style.top = b.top + b.height / 2;
-    // ghostpane.style.left = b.left + b.width / 2;
-    // ghostpane.style.width = 0;
-    // ghostpane.style.height = 0;
   }
 
   // Mouse events
@@ -222,8 +212,6 @@ if (document.querySelectorAll("#pane").length) {
 
       return;
     }
-
-    // This code executes when mouse moves without clicking
 
     // style cursor
     if ((onRightEdge && onBottomEdge) || (onLeftEdge && onTopEdge)) {

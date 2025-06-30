@@ -7,7 +7,6 @@ class TransactionService {
     this.loaded = false;
   }
 
-  // Cargar todas las transacciones del usuario
   async loadTransactions() {
     try {
       this.transactions = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.LIST);
@@ -19,7 +18,6 @@ class TransactionService {
     }
   }
 
-  // Obtener transacciones filtradas
   async getFilteredTransactions(filters = {}) {
     try {
       const queryParams = new URLSearchParams();
@@ -36,7 +34,6 @@ class TransactionService {
     }
   }
 
-  // Obtener las últimas 5 transacciones
   async getLatestTransactions() {
     try {
       return await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.LATEST);
@@ -46,7 +43,6 @@ class TransactionService {
     }
   }
 
-  // Crear nueva transacción
   async createTransaction(transactionData) {
     try {
       const newTransaction = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.CREATE, {
@@ -54,7 +50,6 @@ class TransactionService {
         body: JSON.stringify(transactionData)
       });
       
-      // Actualizar la lista local
       this.transactions.unshift(newTransaction);
       return newTransaction;
     } catch (error) {
@@ -63,7 +58,6 @@ class TransactionService {
     }
   }
 
-  // Actualizar transacción
   async updateTransaction(id, transactionData) {
     try {
       await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.UPDATE(id), {
@@ -71,7 +65,6 @@ class TransactionService {
         body: JSON.stringify(transactionData)
       });
       
-      // Actualizar la lista local
       const index = this.transactions.findIndex(t => t.id === id);
       if (index !== -1) {
         this.transactions[index] = { ...this.transactions[index], ...transactionData };
@@ -84,14 +77,12 @@ class TransactionService {
     }
   }
 
-  // Eliminar transacción
   async deleteTransaction(id) {
     try {
       await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.DELETE(id), {
         method: 'DELETE'
       });
       
-      // Actualizar la lista local
       this.transactions = this.transactions.filter(t => t.id !== id);
       return true;
     } catch (error) {
@@ -100,7 +91,6 @@ class TransactionService {
     }
   }
 
-  // Obtener transacción por ID
   async getTransactionById(id) {
     try {
       return await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_BY_ID(id));
@@ -110,7 +100,6 @@ class TransactionService {
     }
   }
 
-  // Obtener resumen del mes actual
   async getCurrentMonthSummary() {
     try {
       return await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.SUMMARY_CURRENT_MONTH);
@@ -120,7 +109,6 @@ class TransactionService {
     }
   }
 
-  // Obtener resumen de los últimos 6 meses
   async getLast6MonthsSummary() {
     try {
       return await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.SUMMARY_LAST_6_MONTHS);
@@ -130,7 +118,6 @@ class TransactionService {
     }
   }
 
-  // Formatear transacción para mostrar en la UI
   formatTransactionForUI(transaction) {
     const visibility = transaction.isPublic ? "Public" : "Private";
     
@@ -149,7 +136,6 @@ class TransactionService {
     };
   }
 
-  // Formatear transacción para enviar al backend
   formatTransactionForAPI(transaction) {
     return {
       description: transaction.description,
@@ -161,7 +147,6 @@ class TransactionService {
     };
   }
 
-  // Obtener estadísticas básicas
   getBasicStats() {
     const income = this.transactions
       .filter(t => t.type === 'INCOME')
@@ -179,13 +164,11 @@ class TransactionService {
     };
   }
 
-  // Limpiar caché
   clearCache() {
     this.transactions = [];
     this.loaded = false;
   }
 }
 
-// Instancia singleton
 const transactionService = new TransactionService();
 export default transactionService; 

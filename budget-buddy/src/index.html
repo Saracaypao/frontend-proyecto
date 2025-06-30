@@ -24,7 +24,6 @@
       $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
       
       (() => {
-        // Check authentication
         try {
           const token = localStorage.getItem('jwtToken');
           if (!token) {
@@ -32,7 +31,6 @@
             return;
           }
           
-          // Verify token expiration
           const payload = JSON.parse(atob(token.split('.')[1]));
           const currentTime = Date.now() / 1000;
           if (payload.exp < currentTime) {

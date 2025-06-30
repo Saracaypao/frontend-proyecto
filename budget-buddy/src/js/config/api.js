@@ -1,6 +1,6 @@
-// Configuración de la API del backend
+// api url
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8081',
+  BASE_URL: 'https://pnc-proyecto-final-grupo-02-s01-yefv.onrender.com',
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/auth/login',
@@ -53,7 +53,6 @@ const API_CONFIG = {
   }
 };
 
-// Función helper para hacer peticiones a la API
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   const defaultOptions = {
@@ -65,7 +64,6 @@ async function apiRequest(endpoint, options = {}) {
 
   const finalOptions = { ...defaultOptions, ...options };
   
-  // Agregar token de autorización si existe
   const token = localStorage.getItem('jwtToken');
   if (token) {
     finalOptions.headers['Authorization'] = `Bearer ${token}`;
@@ -79,7 +77,6 @@ async function apiRequest(endpoint, options = {}) {
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
-    // Si la respuesta es vacía (como en DELETE), retornar null
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       return null;
     }
@@ -91,18 +88,15 @@ async function apiRequest(endpoint, options = {}) {
   }
 }
 
-// Función para verificar si el usuario está autenticado
 function isAuthenticated() {
   return !!localStorage.getItem('jwtToken');
 }
 
-// Función para obtener información del usuario del token
 function getUserInfo() {
   const token = localStorage.getItem('jwtToken');
   if (!token) return null;
   
   try {
-    // Decodificar el token JWT (parte del payload)
     const payload = JSON.parse(atob(token.split('.')[1]));
     return {
       id: payload.sub,
@@ -115,10 +109,9 @@ function getUserInfo() {
   }
 }
 
-// Función para cerrar sesión
 async function logout() {
   try {
-    // Notificar al backend sobre el logout (opcional)
+
     const token = localStorage.getItem('jwtToken');
     if (token) {
       try {
@@ -127,28 +120,23 @@ async function logout() {
         });
       } catch (error) {
         console.warn('No se pudo notificar logout al backend:', error);
-        // Continuar con el logout local aunque falle la notificación
       }
     }
     
-    // Limpiar todos los datos del localStorage
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('userInfo');
     localStorage.removeItem('token');
     
-    // Limpiar cualquier caché de sesión
     sessionStorage.clear();
     
-    // Limpiar cookies relacionadas con la sesión
     document.cookie.split(";").forEach(function(c) { 
       document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
     });
     
-    // Redirigir a la página de login
     window.location.href = '/signin.html';
   } catch (error) {
     console.error('Error durante el logout:', error);
-    // Forzar redirección incluso si hay error
+
     window.location.replace('/signin.html');
   }
 }

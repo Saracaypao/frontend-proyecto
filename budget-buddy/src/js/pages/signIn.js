@@ -5,7 +5,6 @@ export default function loadSigninPage() {
   const root = document.getElementById("signin-root");
   if (!root) return;
 
-  // local state for toggling password visibility
   let showPassword = false;
 
   root.innerHTML = `
@@ -152,7 +151,7 @@ export default function loadSigninPage() {
 </div>
 `;
 
-  // Toggle password visibility
+  // toggle password visibility
   const toggleBtn = document.getElementById("togglePassword");
   const pwdInput  = document.getElementById("password");
   const eyeOpen   = document.getElementById("eyeOpenIcon");
@@ -165,14 +164,12 @@ export default function loadSigninPage() {
     eyeClose.classList.toggle("hidden");
   });
 
-  // Handle form submit
   const signinForm = document.getElementById("signin-form");
   signinForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email    = document.getElementById("email").value;
     const password = pwdInput.value;
 
-    // Mostrar loading
     const submitBtn = signinForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = "Iniciando sesión...";
@@ -184,7 +181,6 @@ export default function loadSigninPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      // Guardar token e información del usuario
       localStorage.setItem("jwtToken", data.token);
       localStorage.setItem("userInfo", JSON.stringify({
         id: data.id,
@@ -193,10 +189,8 @@ export default function loadSigninPage() {
         role: data.role
       }));
 
-      // Mostrar mensaje de éxito
       showNotification("Login successful!", "success");
       
-      // Redirigir al dashboard
       setTimeout(() => {
         if (data.role === "ADVISOR") {
           window.location.href = "/financialAdv.html"; 
@@ -209,13 +203,12 @@ export default function loadSigninPage() {
       console.error("Error de login:", err);
       showNotification("Credenciales incorrectas. Intenta nuevamente.", "error");
     } finally {
-      // Restaurar botón
+
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
   });
 
-  // Función para mostrar notificaciones
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${

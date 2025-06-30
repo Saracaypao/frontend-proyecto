@@ -1,4 +1,4 @@
-// src/js/components/charts/chart-01.js
+
 import ApexCharts from "apexcharts";
 import { API_CONFIG, apiRequest } from "../../config/api.js";
 

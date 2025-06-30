@@ -5,7 +5,7 @@
   x-data="{ isUserAdvisor: false }"
   x-init="
     (() => {
-      // Detectar el rol del usuario desde el token JWT
+  
       try {
         const token = localStorage.getItem('jwtToken');
         if (!token) {
@@ -13,7 +13,6 @@
           return;
         }
         
-        // Verificar si el token es válido
         const payload = JSON.parse(atob(token.split('.')[1]));
         const currentTime = Date.now() / 1000;
         if (payload.exp < currentTime) {
@@ -124,7 +123,7 @@
               >
                 Dashboard
               </span>
-            </a> <!-- final del bloque de dashboard -->
+            </a> 
             </template>
             <!-- Dropdown Menu End -->
           </li>
