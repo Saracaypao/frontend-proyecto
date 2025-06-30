@@ -289,6 +289,7 @@
   </body>
   
   <!-- Auth Guard -->
+<script>
 // check token
 function checkAuth() {
   const token = localStorage.getItem("jwtToken");
@@ -338,5 +339,5 @@ function checkAuth() {
       window.location.href = "./signin.html";
     });
 }
-
+</script>
 </html> 
