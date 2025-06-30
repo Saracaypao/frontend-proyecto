@@ -33,10 +33,10 @@
     </button>
     <div class="px-2 pr-14">
       <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-        <span x-text="isEditMode ? 'Editar Transacción' : 'Nueva Transacción'"></span>
+        <span x-text="isEditMode ? 'Edit Transaction' : 'New Transaction'"></span>
       </h4>
       <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-        <span x-text="isEditMode ? 'Modifica los detalles de tu transacción.' : 'Agrega un nuevo ingreso o gasto a tu presupuesto.'"></span>
+        <span x-text="isEditMode ? 'Modify the details of your transaction.' : 'Add a new income or expense to your budget.'"></span>
       </p>
     </div>
     <form @submit.prevent="handleSubmit()" class="flex flex-col">
@@ -78,16 +78,6 @@
                     <option :value="category.id" x-text="category.name"></option>
                   </template>
                 </select>
-                <button
-                  type="button"
-                  @click="openCategoryModal()"
-                  class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                  title="Crear nueva categoría"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                </button>
               </div>
             </div>
 
@@ -162,7 +152,7 @@
           type="submit"
           class="flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
         >
-          <span x-text="isEditMode ? 'Actualizar Transacción' : 'Agregar Transacción'"></span>
+          <span x-text="isEditMode ? 'Edit Transaction' : 'Add Transaction'"></span>
         </button>
       </div>
     </form>

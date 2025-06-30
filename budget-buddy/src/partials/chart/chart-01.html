@@ -1,24 +1,13 @@
 <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
-  <div class="flex items-center justify-between">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-      Analytics
-    </h3>
-    <div class="relative inline-block">
-      <button id="dropdownButton" class="dropdown-toggle">
-        
-      </button>
-      <div
-        id="dropdownMenu"
-        class="absolute right-0 z-10 mt-2 hidden w-40 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800"
-      >
-        <button class="block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
-          View More
-        </button>
-        <button class="block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
-          Delete
-        </button>
-      </div>
+  <div>
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+        Analytical graph
+      </h3>
     </div>
+    <p class="block mt-2 mb-6 text-sm text-gray-500 dark:text-gray-400">
+        Transactions from the last 6 months
+    </p>
   </div>
 
   <div class="max-w-full overflow-x-auto custom-scrollbar">
@@ -28,19 +17,3 @@
   </div>
 </div>
 
-<script>
-  // Toggle dropdown visibility
-  const dropdownBtn = document.getElementById("dropdownButton");
-  const dropdownMenu = document.getElementById("dropdownMenu");
-
-  dropdownBtn?.addEventListener("click", () => {
-    dropdownMenu.classList.toggle("hidden");
-  });
-
-  // Optional: close dropdown when clicking outside
-  document.addEventListener("click", function (e) {
-    if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-      dropdownMenu.classList.add("hidden");
-    }
-  });
-</script>

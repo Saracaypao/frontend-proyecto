@@ -24,45 +24,37 @@
       sidebarToggle: false,
       scrollTop: false,
       
-      // Datos de solicitudes
       pendingRequests: [],
       myRequests: [],
       myAssignments: [],
       selectedRequest: null,
       
-      // Formulario de nueva solicitud
       showNewRequestModal: false,
       newRequest: {
         description: '',
         period: '1_MONTH'
       },
       
-      // Modal de reporte
       showReportModal: false,
       currentReport: null,
       currentReportMessage: '',
       
-      // Modal de asesoría
       showAdviceModal: false,
       currentAdviceRequest: null,
       adviceText: '',
       
-      // Estados de carga
       loading: false,
       loadingRequests: false,
       loadingAssignments: false,
       
-      // Estado del rol
       isUserAdvisor: false,
-      
-      // Pestañas
+
       activeTab: 'pending', // pending, my-requests, my-assignments
       
       async init() {
         this.darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
         this.$watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
         
-        // Verificar autenticación
         const token = localStorage.getItem('jwtToken');
         if (!token) {
           window.location.href = './signin.html';
@@ -70,7 +62,7 @@
         }
         
         try {
-          // Verificar si el token es válido decodificándolo
+
           const payload = JSON.parse(atob(token.split('.')[1]));
           const currentTime = Date.now() / 1000;
           if (payload.exp < currentTime) {
@@ -85,11 +77,9 @@
           return;
         }
         
-        // Verificar si el usuario es asesor
         const isAdvisor = await this.isAdvisor();
         this.isUserAdvisor = isAdvisor;
         
-        // Establecer la pestaña inicial según el rol
         if (this.isUserAdvisor) {
           this.activeTab = 'pending';
         } else {
@@ -98,7 +88,6 @@
         
         await this.loadData();
         
-        // Crear servicio de advice directamente
         window.adviceService = {
           async getReport(requestId) {
             try {
@@ -151,13 +140,11 @@
           const isAdvisor = await this.isAdvisor();
           
           if (isAdvisor) {
-            // Cargar solicitudes pendientes y mis asignaciones
             await Promise.all([
               this.loadPendingRequests(),
               this.loadMyAssignments()
             ]);
           } else {
-            // Cargar mis solicitudes como usuario
             await this.loadMyRequests();
           }
         } catch (error) {
@@ -252,14 +239,13 @@
           return;
         }
         
-        // Validar que el usuario no sea asesor
         if (this.isUserAdvisor) {
           this.showNotification('Los asesores no pueden solicitar asesoría', 'error');
           return;
         }
         
         try {
-          // Calcular fechas basadas en el período seleccionado
+
           const endDate = new Date();
           const startDate = new Date();
           
@@ -401,7 +387,7 @@
       },
       
       async viewReport(requestId) {
-        // Verificar que el usuario sea asesor
+
         const isAdvisor = await this.isAdvisor();
         if (!isAdvisor) {
           this.showNotification('Solo los asesores pueden ver reportes', 'error');
@@ -411,7 +397,7 @@
         try {
           const report = await window.adviceService.getReport(requestId);
           this.showNotification('Reporte cargado: ' + report.message, 'success');
-          // Mostrar el reporte en un modal
+
           this.currentReport = report;
           this.currentReportMessage = report.message || '';
           this.showReportModal = true;
@@ -419,7 +405,7 @@
           console.error('Error cargando reporte:', error);
           if (error.message.includes('401')) {
             this.showNotification('No autorizado. Verifica tu sesión.', 'error');
-            // Redirigir al login si el token no es válido
+
             setTimeout(() => {
               localStorage.removeItem('jwtToken');
               window.location.href = './signin.html';
@@ -429,7 +415,7 @@
           } else if (error.message.includes('404')) {
             this.showNotification('Solicitud no encontrada', 'error');
           } else {
-            // Mostrar mensaje específico del backend si está disponible
+
             let errorMessage = 'Error cargando reporte';
             if (error.message.includes('No se puede ver reporte de una solicitud pendiente')) {
               errorMessage = 'No se puede ver reporte de una solicitud pendiente';
@@ -446,14 +432,13 @@
       },
       
       async provideAdvice(requestId) {
-        // Verificar que el usuario sea asesor
+
         const isAdvisor = await this.isAdvisor();
         if (!isAdvisor) {
           this.showNotification('Solo los asesores pueden proporcionar asesoría', 'error');
           return;
         }
         
-        // Abrir modal de asesoría
         this.currentAdviceRequest = requestId;
         this.adviceText = '';
         this.showAdviceModal = true;
@@ -474,7 +459,7 @@
           console.error('Error enviando asesoría:', error);
           if (error.message.includes('401')) {
             this.showNotification('No autorizado. Verifica tu sesión.', 'error');
-            // Redirigir al login si el token no es válido
+
             setTimeout(() => {
               localStorage.removeItem('jwtToken');
               window.location.href = './signin.html';
@@ -626,7 +611,7 @@
       
       async isAdvisor() {
         try {
-          // Obtener el rol del usuario desde el token JWT
+
           const token = localStorage.getItem('jwtToken');
           if (token) {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -687,10 +672,10 @@
           <div class="p-4 md:ml-[15px] mt-4">
             <div class="mb-1">
               <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-                <span x-text="isUserAdvisor ? 'Panel de Asesoría Financiera' : 'Solicitudes de Asesoría'"></span>
+                <span x-text="isUserAdvisor ? 'Financial Advisory Panel' : 'Financial Advice'"></span>
               </h2>
                 <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                <span x-text="isUserAdvisor ? 'Gestiona y proporciona asesoría financiera profesional a usuarios' : 'Solicita asesoría financiera personalizada'"></span>
+                <span x-text="isUserAdvisor ? 'Manage and provide professional financial advice to users' : 'Request personalized financial advice'"></span>
                 </span>
             </div>
           </div>
@@ -768,9 +753,9 @@
               <template x-if="!isUserAdvisor">
                 <button
                   @click="openNewRequestModal()"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                  class="px-4 py-2 bg-brand-500 hover:bg-brand-500 text-white rounded-lg font-medium"
                 >
-                  + Nueva Solicitud de Asesoría
+                  + New Request for Advice
                 </button>
               </template>
             </div>
@@ -818,7 +803,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        Mis Solicitudes
+                        My Requests
                         <span x-show="myRequests.length > 0" class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full" x-text="myRequests.length"></span>
                       </button>
                     </div>
@@ -841,7 +826,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     <span x-text="activeTab === 'pending' ? 'Solicitudes Pendientes' : 
-                                 activeTab === 'my-requests' ? 'Mis Solicitudes' : 
+                                 activeTab === 'my-requests' ? 'My Requests' : 
                                  'Mis Asignaciones'"></span>
                   </h3>
                   
@@ -916,7 +901,7 @@
                               <button x-show="activeTab === 'my-requests' && request.status === 'PENDING'"
                                       @click.stop="cancelRequest(request.id)"
                                       class="block w-full px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded">
-                                Cancelar
+                                Cancel
                               </button>
                             </div>
                           </div>
@@ -942,7 +927,7 @@
               <div class="lg:col-span-1">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Detalles de la Solicitud
+                    Application Details
                   </h3>
 
                   <!-- Selected Request Details -->
@@ -996,7 +981,7 @@
 
                   <!-- No Selection State -->
                   <div x-show="!selectedRequest" class="text-center py-8">
-                    <p class="text-gray-500 dark:text-gray-400">Selecciona una solicitud para ver detalles</p>
+                    <p class="text-gray-500 dark:text-gray-400">Select a request to view details</p>
                   </div>
                 </div>
               </div>
@@ -1011,69 +996,66 @@
     <!-- ===== Page Wrapper End ===== -->
 
     <!-- Modal para nueva solicitud -->
-    <div x-show="showNewRequestModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-        
-        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
-                  Nueva Solicitud de Asesoría
-                </h3>
-                
-                <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Período de análisis</label>
-                    <select 
-                      x-model="newRequest.period" 
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="1_MONTH">Último mes</option>
-                      <option value="3_MONTHS">Últimos 3 meses</option>
-                      <option value="6_MONTHS">Últimos 6 meses</option>
-                      <option value="9_MONTHS">Últimos 9 meses</option>
-                      <option value="1_YEAR">Último año</option>
-                    </select>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Solo se considerarán las transacciones marcadas como públicas
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                    <textarea 
-                      x-model="newRequest.description" 
-                      rows="3"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Describe qué tipo de asesoría necesitas..."
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+<!-- Modal for new request -->
+<div x-show="showNewRequestModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+  
+  <div class="transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+      <div class="sm:flex sm:items-start">
+        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+          <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
+            New Request for Advice
+          </h3>
           
-          <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button 
-              @click="createRequest()"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Crear Solicitud
-            </button>
-            <button 
-              @click="closeNewRequestModal()"
-              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Cancelar
-            </button>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Analysis period</label>
+              <select 
+                x-model="newRequest.period" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                <option value="1_MONTH">Last month</option>
+                <option value="3_MONTHS">Last 3 months</option>
+                <option value="6_MONTHS">Last 6 months</option>
+                <option value="9_MONTHS">Last 9 months</option>
+                <option value="1_YEAR">Last year</option>
+              </select>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Only transactions marked as public will be considered.
+              </p>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <textarea 
+                x-model="newRequest.description" 
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Describe what type of advice you need..."
+              ></textarea>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    
+    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+      <button 
+        @click="createRequest()"
+        class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+      >
+        Create Request
+      </button>
+      <button 
+        @click="closeNewRequestModal()"
+        class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Modal para ver reporte -->
     <div x-show="showReportModal && currentReport" class="fixed inset-0 z-50 overflow-y-auto">
@@ -1312,7 +1294,7 @@
                 @click="closeAdviceModal()"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Cancelar
+                Cancel
               </button>
               <button 
                 @click="submitAdvice()"
@@ -1323,7 +1305,7 @@
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                   </svg>
-                  Enviar Asesoría
+                  Submit Advice Request
                 </span>
               </button>
             </div>
@@ -1332,6 +1314,5 @@
       </div>
     </div>
 
-    <script type="module" src="./js/index.js"></script>
   </body>
 </html>

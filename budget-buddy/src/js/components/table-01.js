@@ -170,7 +170,7 @@ export function renderRecentTransactions(transactions = []) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="py-8 text-center text-gray-500 dark:text-gray-400">
-          No hay transacciones recientes
+          No recent transactions
         </td>
       </tr>
     `;

@@ -42,7 +42,10 @@ module.exports = {
   entry: "./src/js/index.js",
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
-    modules: ['node_modules']
+    modules: ['node_modules'],
+      alias: {
+      alpinejs: path.resolve(__dirname, 'node_modules/alpinejs'),
+  },
   },
   devServer: {
     static: {

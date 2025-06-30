@@ -7,7 +7,7 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Configuración | BudgetBuddy</title>
+    <title>Settings | BudgetBuddy</title>
     <script>
         window.currentPage = 'settings';
     </script>
@@ -47,7 +47,7 @@
             }
             
             try {
-              // Verificar si el usuario está autenticado
+
               const token = localStorage.getItem('jwtToken');
               if (!token) {
                 this.passwordError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
@@ -77,12 +77,11 @@
                 this.confirmPassword = '';
                 this.showNotification('Contraseña cambiada exitosamente', 'success');
                 
-                // Limpiar el mensaje de éxito después de 5 segundos
                 setTimeout(() => {
                   this.passwordSuccess = false;
                 }, 5000);
               } else if (response.status === 401) {
-                // Token expirado o inválido
+
                 this.passwordError = 'Tu sesión ha expiado. Por favor, inicia sesión nuevamente.';
                 this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
                 localStorage.removeItem('jwtToken');
@@ -102,7 +101,7 @@
                   const data = JSON.parse(errorText);
                   errorMessage = data.error || data.message || errorMessage;
                 } catch (e) {
-                  // Si no es JSON, usar el texto como está
+
                   if (errorText) {
                     errorMessage = errorText;
                   }
@@ -180,10 +179,10 @@
           <div class="p-4 md:ml-[15px] mt-4">
             <div class="mb-1">
               <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-                Configuración
+                Settings
               </h2>
               <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                Gestiona tu cuenta y preferencias
+                Manage your account and preferences
               </span>
             </div>
           </div>
@@ -192,40 +191,40 @@
           <div class="p-4 mx-auto max-w-2xl md:p-6">
             <!-- Cambiar contraseña -->
             <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Cambiar contraseña</h3>
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Change password</h3>
               <form @submit.prevent="changePassword" class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña actual</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current password</label>
                   <input 
                     type="password" 
                     x-model="currentPassword" 
                     required 
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Ingresa tu contraseña actual"
+                    placeholder="Enter your current password"
                     @input="clearMessages()"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva contraseña</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New password</label>
                   <input 
                     type="password" 
                     x-model="newPassword" 
                     required 
                     minlength="6" 
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Minimum 6 characters"
                     @input="clearMessages()"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar nueva contraseña</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm new password</label>
                   <input 
                     type="password" 
                     x-model="confirmPassword" 
                     required 
                     minlength="6" 
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Repite la nueva contraseña"
+                    placeholder="Repeat the new password"
                     @input="clearMessages()"
                   />
                 </div>
@@ -238,7 +237,7 @@
                       <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                       </svg>
-                      <span>¡Contraseña cambiada exitosamente!</span>
+                      <span>Password changed successfully!</span>
                     </div>
                   </div>
                 </template>
@@ -246,7 +245,7 @@
                   type="submit" 
                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                 >
-                  Cambiar contraseña
+                  Change password
                 </button>
               </form>
             </div>
@@ -255,8 +254,8 @@
             <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Tema oscuro</h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Cambia entre tema claro y oscuro</p>
+                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Theme</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Switch between light and dark theme</p>
                 </div>
                 <label class="inline-flex items-center cursor-pointer">
                   <input type="checkbox" x-model="darkMode" class="sr-only peer" />
@@ -269,14 +268,14 @@
             <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Cerrar sesión</h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Cierra tu sesión actual</p>
+                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Sign out</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Close your current session</p>
                 </div>
                 <button 
                   @click="logout" 
                   class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
                 >
-                  Cerrar sesión
+                  Sign out
                 </button>
               </div>
             </div>
@@ -290,16 +289,114 @@
   </body>
   
   <!-- Auth Guard -->
-  <script type="module">
-    import { initAuthGuard, updateUserInfo, setupLogoutButton } from './js/auth/auth-guard.js';
-    
-    // Inicializar el guard de autenticación
-    initAuthGuard();
-    
-    // Actualizar información del usuario en el header
-    updateUserInfo();
-    
-    // Configurar botón de logout
-    setupLogoutButton();
-  </script>
+<script type="module">
+  // utils
+  function getCurrentPage() {
+    return window.location.pathname.split("/").pop() || "index.html";
+  }
+
+  function isProtectedPage() {
+    const protectedPages = [
+      "index.html",
+      "transactions.html",
+      "report.html",
+      "profile.html",
+      "financialAdv.html",
+      "settings.html",
+    ];
+    return protectedPages.includes(getCurrentPage());
+  }
+
+  function isPublicPage() {
+    const publicPages = ["signin.html", "signup.html", "landing.html"];
+    return publicPages.includes(getCurrentPage());
+  }
+
+  // check token
+  function checkAuth() {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      if (isProtectedPage()) {
+        window.location.href = "./signin.html";
+      }
+      return;
+    }
+
+    fetch("http://localhost:8081/auth/verify", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Token inválido");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.valid) {
+          const user = data.user;
+          // if advisor
+          if (user.role === "ADVISOR" && isProtectedPage()) {
+            window.location.href = "./index.html";
+            return;
+          }
+
+          // save users info if not 
+          if (!localStorage.getItem("userInfo")) {
+            const userInfo = {
+              fullName: user.firstName + " " + user.lastName,
+              email: user.email,
+            };
+            localStorage.setItem("userInfo", JSON.stringify(userInfo));
+          }
+
+          updateUserInfo(); //show in header
+        } else {
+          throw new Error("Token inválido");
+        }
+      })
+      .catch((err) => {
+        console.error("Auth error:", err.message);
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        window.location.href = "./signin.html";
+      });
+  }
+
+  // update header data
+  function updateUserInfo() {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+    const nameEl = document.getElementById("userName");
+    const emailEl = document.getElementById("userEmail");
+
+    if (nameEl && userInfo.fullName) nameEl.textContent = userInfo.fullName;
+    if (emailEl && userInfo.email) emailEl.textContent = userInfo.email;
+  }
+
+  // logout
+  function setupLogout() {
+    document.addEventListener("DOMContentLoaded", () => {
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          localStorage.removeItem("jwtToken");
+          localStorage.removeItem("userInfo");
+          window.location.href = "./signin.html";
+        });
+      }
+    });
+  }
+
+  // init all
+  checkAuth();
+  setupLogout();
+
+  // validate every 5 min
+  setInterval(() => {
+    if (isProtectedPage() && !localStorage.getItem("jwtToken")) {
+      window.location.href = "./signin.html";
+    }
+  }, 5 * 60 * 1000);
+</script>
+
 </html> 

@@ -149,24 +149,24 @@ root.innerHTML = `
           <p id="passwordMatchError" class="mt-1 text-sm text-red-600 hidden">Passwords do not match</p>
         </div>
         
-        <!-- Role Selection -->
+        <!-- role -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Tipo de Cuenta <span class="text-red-500">*</span>
+          <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-400">
+            Account Type <span class="text-red-500">*</span>
           </label>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <label class="relative cursor-pointer">
               <input
                 type="radio"
                 name="role"
                 value="USER"
                 checked
-                class="sr-only"
+                class="sr-only peer"
               />
-              <div class="role-option border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center transition-all hover:border-brand-300 dark:hover:border-brand-500">
-                <div class="text-lg mb-2">👤</div>
-                <div class="font-medium text-gray-900 dark:text-white">Usuario</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gestiona tus finanzas personales</div>
+              <div class="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-center transition-colors hover:border-blue-400 dark:hover:border-blue-400 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500">
+                <div class="text-sm mb-0.5">👤</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">User</div>
+                <div class="text-[0.65rem] text-gray-500 dark:text-gray-400 leading-tight">Personal finances</div>
               </div>
             </label>
             <label class="relative cursor-pointer">
@@ -174,12 +174,12 @@ root.innerHTML = `
                 type="radio"
                 name="role"
                 value="ADVISOR"
-                class="sr-only"
+                class="sr-only peer"
               />
-              <div class="role-option border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center transition-all hover:border-brand-300 dark:hover:border-brand-500">
-                <div class="text-lg mb-2">🎓</div>
-                <div class="font-medium text-gray-900 dark:text-white">Asesor</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Proporciona asesoría financiera</div>
+              <div class="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-center transition-colors hover:border-blue-400 dark:hover:border-blue-400 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500">
+                <div class="text-sm mb-0.5">🎓</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">Advisor</div>
+                <div class="text-[0.65rem] text-gray-500 dark:text-gray-400 leading-tight">Give financial advice</div>
               </div>
             </label>
           </div>
@@ -326,7 +326,7 @@ signupForm?.addEventListener("submit", async (e) => {
   // Mostrar loading
   const submitBtn = signupForm.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
-  submitBtn.textContent = "Creando cuenta...";
+  submitBtn.textContent = "Creating account...";
   submitBtn.disabled = true;
 
   try {
@@ -336,7 +336,7 @@ signupForm?.addEventListener("submit", async (e) => {
     });
 
     // Mostrar mensaje de éxito
-    showNotification("¡Cuenta creada exitosamente! Redirigiendo al login...", "success");
+    showNotification("Account created successfully! Redirecting to login...", "success");
     
     // Redirigir al login después de un breve delay
     setTimeout(() => {

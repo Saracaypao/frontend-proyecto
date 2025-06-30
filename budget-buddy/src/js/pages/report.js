@@ -155,7 +155,7 @@ export default function reportComponent() {
           data: [this.currentReport.totalIncome, this.currentReport.totalExpenses],
           backgroundColor: ['#10B981', '#EF4444'],
           borderColor: ['#059669', '#DC2626'],
-          borderWidth: 1
+          borderWidth: 5
         }]
       };
 
@@ -174,8 +174,8 @@ export default function reportComponent() {
           {
             label: 'Income',
             data: this.last6MonthsData.map(item => item.totalIncome),
-            backgroundColor: '#10B981',
-            borderColor: '#059669',
+            backgroundColor: '"#6495ED" ',
+            borderColor: '"#6495ED" ',
             borderWidth: 1
           },
           {

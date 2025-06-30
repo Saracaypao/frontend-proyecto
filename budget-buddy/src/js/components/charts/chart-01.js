@@ -8,17 +8,17 @@ export default function chart01() {
       {
         name: "Income",
         data: [0, 0, 0, 0, 0, 0],
-        color: "#10B981" // Verde para ingresos
+        color: "#6495ED" 
       },
       {
         name: "Expenses",
         data: [0, 0, 0, 0, 0, 0],
-        color: "#EF4444" // Rojo para gastos
+        color: "#465fff" 
       },
     ],
     chart: {
       type: "bar",
-      height: 350,
+      height: 260,
       toolbar: {
         show: false,
       },
@@ -27,38 +27,31 @@ export default function chart01() {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "55%",
-        endingShape: "rounded",
-        borderRadius: 4,
+        columnWidth: "75%",
+        borderRadiusApplication: "end",
+        borderRadius: 5,
       },
+        dataLabels: {
+          position: "top",
+        },
     },
     dataLabels: {
       enabled: false,
     },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ["transparent"],
-    },
+    stroke: { show: true, width: 2, colors: ["transparent"] },
     xaxis: {
-      categories: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
+      categories: [], // loading from backend
       labels: {
         style: {
-          colors: "#6B7280",
+          colors: "#465fff",
           fontSize: "12px",
           fontFamily: "Inter, sans-serif",
         },
       },
+      axisBorder: { show: false },
+      axisTicks:  { show: false },
     },
     yaxis: {
-      title: {
-        text: "$ (dólares)",
-        style: {
-          color: "#6B7280",
-          fontSize: "12px",
-          fontFamily: "Inter, sans-serif",
-        },
-      },
       labels: {
         style: {
           colors: "#6B7280",
@@ -76,49 +69,55 @@ export default function chart01() {
     tooltip: {
       y: {
         formatter: function (val) {
-          return "$ " + val.toFixed(2) + " dólares";
+          return "$ " + val.toFixed(2) + " dollars";
         },
       },
       theme: "dark",
     },
     legend: {
       position: "top",
-      horizontalAlign: "right",
-      labels: {
-        colors: "#6B7280",
-        useSeriesColors: false,
-      },
-    },
-    grid: {
-      borderColor: "#E5E7EB",
-      strokeDashArray: 4,
+      horizontalAlign: "left",
+      fontFamily: "Outfit",
+      labels: { colors: "#6b7280" },
+      markers: { radius: 99 },
     },
   };
 
-  // Cargar datos del backend
   async function loadChartData() {
     try {
       const data = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.SUMMARY_LAST_6_MONTHS);
-      
-      // Actualizar los datos del gráfico
+
+      console.log("Backend data:", data);
+
       if (data && data.length > 0) {
         const incomeData = data.map(item => item.income || 0);
         const expenseData = data.map(item => item.expense || 0);
-        
-        // Actualizar las series del gráfico
+
+        // short forms of the months
+        const monthMap = {
+          JANUARY: "Jan", FEBRUARY: "Feb", MARCH: "Mar",
+          APRIL: "Apr", MAY: "May", JUNE: "Jun",
+          JULY: "Jul", AUGUST: "Aug", SEPTEMBER: "Sept",
+          OCTOBER: "Oct", NOVEMBER: "Nov", DECEMBER: "Dec",
+        };
+
+        const categories = data.map(item => monthMap[item.month?.toUpperCase()] || item.month);
+
         chart01Options.series[0].data = incomeData;
         chart01Options.series[1].data = expenseData;
-        
-        // Re-renderizar el gráfico si ya existe
+        chart01Options.xaxis.categories = categories;
+
         if (window.chart01) {
           window.chart01.updateOptions({
-            series: chart01Options.series
+            series: chart01Options.series,
+            xaxis: {
+              categories: categories
+            }
           });
         }
       }
     } catch (error) {
-      console.error("Error cargando datos del gráfico:", error);
-      // Mantener datos por defecto en caso de error
+      console.error("Error loading chart data:", error);
     }
   }
 
@@ -127,8 +126,7 @@ export default function chart01() {
     const chart01 = new ApexCharts(document.querySelector("#chartOne"), chart01Options);
     chart01.render();
     window.chart01 = chart01;
-    
-    // Cargar datos después de renderizar
+
     setTimeout(() => {
       loadChartData();
     }, 500);

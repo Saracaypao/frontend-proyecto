@@ -9,6 +9,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>BudgetBuddy - Reportes</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.currentPage = 'report';
+    </script>
   </head>
   <body
     data-page="report"
@@ -201,7 +204,6 @@
           periodElement.textContent = this.currentReport.period;
         }
 
-        // Renderizar gráfico del reporte actual
         this.renderCurrentReportChart();
       },
 
@@ -252,13 +254,13 @@
 
       renderChart(ctx, data, type = 'doughnut') {
         try {
-          // Verificar si Chart.js está disponible
+          
           if (typeof Chart === 'undefined') {
-            console.warn('Chart.js no está disponible');
+            console.warn('Chart.js no disponible');
             return;
           }
           
-          // Destruir gráfico existente si existe
+          
           if (ctx.chart) {
             ctx.chart.destroy();
           }
@@ -346,7 +348,7 @@ async getLast6MonthsReport() {
     
     if (response.ok) {
       const data = await response.json();
-      // Convert month names to English
+      
       const monthNames = {
         'JANUARY': 'January', 'FEBRUARY': 'February', 'MARCH': 'March', 'APRIL': 'April',
         'MAY': 'May', 'JUNE': 'June', 'JULY': 'July', 'AUGUST': 'August',
@@ -455,25 +457,25 @@ async getLast6MonthsReport() {
                   Financial Report
                 </h2>
                 <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                  Details analysis of your finacial status
+                  Detailed analysis of your financial status
                 </span>
               </div>
               <div>
-                <button @click="exportReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <button @click="exportReport()" class="bg-brand-500 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
                   <i class="fas fa-download mr-2"></i>Export
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Contenido del Reporte -->
+          <!-- Report -->
           <div class="p-4 mx-auto w-full max-w-screen-xl md:p-6">
             <div class="space-y-6">
-              <!-- Filtros de Período -->
+              <!-- period filters -->
               <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select period</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <!-- Tipo de Reporte -->
+                  <!-- report type -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Report type</label>
                     <select x-model="selectedPeriod" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
@@ -494,7 +496,7 @@ async getLast6MonthsReport() {
                     </select>
                   </div>
 
-                  <!-- Mes -->
+                  <!-- month-->
                   <div x-show="selectedPeriod === 'month'">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Month</label>
                     <select x-model="selectedMonth" @change="generateReport()" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
@@ -504,7 +506,7 @@ async getLast6MonthsReport() {
                     </select>
                   </div>
 
-                  <!-- Rango de Fechas -->
+                  <!-- date range-->
                   <div x-show="selectedPeriod === 'range'" class="md:col-span-2">
                     <div class="grid grid-cols-2 gap-4">
                       <div>
@@ -520,9 +522,8 @@ async getLast6MonthsReport() {
                 </div>
               </div>
 
-              <!-- Métricas Principales -->
               <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <!-- Total Ingresos -->
+
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -537,7 +538,6 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
 
-                <!-- Total Gastos -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -552,7 +552,6 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
 
-                <!-- Balance -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -567,7 +566,6 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
 
-                <!-- Total Transacciones -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -582,8 +580,7 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
               </div>
-
-              <!-- Información del Período -->
+             
               <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
                 <div class="flex items-center justify-between">
                   <div>
@@ -591,7 +588,7 @@ async getLast6MonthsReport() {
                     <p id="report-period" class="text-gray-600 dark:text-gray-400">General</p>
                   </div>
                   <div class="text-right">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Porcentajes</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Percentages</p>
                     <p class="text-lg font-semibold text-gray-900 dark:text-white">
                       <span x-text="incomePercentage"></span> Income | 
                       <span x-text="expensePercentage"></span> Expenses
@@ -600,9 +597,8 @@ async getLast6MonthsReport() {
                 </div>
               </div>
 
-              <!-- Gráficos -->
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <!-- Gráfico del Reporte Actual -->
+                
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current distribution</h3>
                   <div class="h-64">
@@ -610,9 +606,9 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
 
-                <!-- Gráfico de Últimos 6 Meses -->
+                
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">last 6 monts</h3>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Latest 6 monts</h3>
                   <div class="h-64">
                     <canvas id="last-6-months-chart"></canvas>
                   </div>
@@ -621,7 +617,7 @@ async getLast6MonthsReport() {
 
               <!-- Loading State -->
               <div x-show="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
+                <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 flex items-center space-x-3">
                   <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                   <span class="text-gray-900 dark:text-white">Loading report...</span>
                 </div>
@@ -637,11 +633,10 @@ async getLast6MonthsReport() {
   </body>
   
   <!-- Scripts -->
-  <script type="module" src="js/index.js"></script>
   
   <!-- Auth Guard Simple -->
   <script type="module">
-    // Verificación simple de autenticación
+
     function checkAuth() {
       const token = localStorage.getItem('jwtToken');
       if (!token) {
@@ -649,7 +644,6 @@ async getLast6MonthsReport() {
         return;
       }
       
-      // Verificar token con el backend
       fetch('http://localhost:8081/auth/verify', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -664,7 +658,7 @@ async getLast6MonthsReport() {
       })
       .then(data => {
         if (data.valid) {
-          // Verificar si el usuario es asesor y redirigir
+
           if (data.user.role === 'ADVISOR') {
             window.location.href = './index.html';
             return;
@@ -680,10 +674,8 @@ async getLast6MonthsReport() {
       });
     }
     
-    // Ejecutar verificación al cargar
     checkAuth();
     
-    // Configurar botón de logout si existe
     document.addEventListener('DOMContentLoaded', function() {
       const logoutBtn = document.getElementById('logoutBtn');
       if (logoutBtn) {

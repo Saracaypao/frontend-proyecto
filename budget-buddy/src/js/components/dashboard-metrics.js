@@ -27,11 +27,11 @@ export async function loadCurrentMonthMetrics() {
       const balanceCard = document.getElementById("card-balance");
       if (balanceCard) {
         if (balance >= 0) {
-          balanceCard.classList.add("text-green-600");
-          balanceCard.classList.remove("text-red-600");
+          balanceCard.classList.add("text-green-500");
+          balanceCard.classList.remove("text-red-500");
         } else {
-          balanceCard.classList.add("text-red-600");
-          balanceCard.classList.remove("text-green-600");
+          balanceCard.classList.add("text-red-500");
+          balanceCard.classList.remove("text-green-500");
         }
       }
     }

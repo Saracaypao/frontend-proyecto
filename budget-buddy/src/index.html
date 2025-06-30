@@ -27,7 +27,7 @@
          $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
          
          (() => {
-           // Detectar el rol del usuario
+           // detect user rol
            try {
              const token = localStorage.getItem('jwtToken');
              if (!token) {
@@ -35,7 +35,7 @@
                return;
              }
              
-             // Verificar si el token es válido
+             // check if tokes is valid
              const payload = JSON.parse(atob(token.split('.')[1]));
              const currentTime = Date.now() / 1000;
              if (payload.exp < currentTime) {
@@ -84,10 +84,10 @@
           <div class="p-4 md:ml-[15px] mt-4">
             <div class="mb-1">
               <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-                <span x-text="isUserAdvisor ? 'Panel de Asesor' : 'Welcome'"></span>
+                <span x-text="isUserAdvisor ? 'Advisor panel' : 'Welcome'"></span>
               </h2>
                 <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                  <span x-text="isUserAdvisor ? 'Resumen de tus actividades de asesoría' : 'Here\'s a summary of your money'"></span>
+                  <span x-text="isUserAdvisor ? 'Summary of your consulting activities' : 'Here\'s a summary of your money this past month'"></span>
                 </span>
             </div>
           </div>
