@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BudgetBuddy</title>
+  </head>
+  <body
+    data-page="dashboard"
+    x-data="{ 
+      page: 'dashboard', 
+      loaded: true, 
+      darkMode: false, 
+      stickyMenu: false, 
+      sidebarToggle: false, 
+      scrollTop: false
+    }"
+    x-init="
+      darkMode = JSON.parse(localStorage.getItem('darkMode'));
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+      
+      (() => {
+        try {
+          const token = localStorage.getItem('jwtToken');
+          if (!token) {
+            window.location.href = './signin.html';
+            return;
+          }
+          
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const currentTime = Date.now() / 1000;
+          if (payload.exp < currentTime) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = './signin.html';
+            return;
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+          localStorage.removeItem('jwtToken');
+          window.location.href = './signin.html';
+        }
+      })()
+    "
+    :class="{'dark bg-gray-900': darkMode === true}"
+  >
+    <!-- ===== Preloader Start ===== -->
+    <include src="./partials/preloader.html"></include>
+    <!-- ===== Preloader End ===== -->
+
+    <!-- ===== Page Wrapper Start ===== -->
+    <div class="flex h-screen overflow-hidden">
+      <!-- ===== Sidebar Start ===== -->
+      <include src="./partials/sidebar.html"></include>
+      <!-- ===== Sidebar End ===== -->
+
+      <!-- ===== Content Area Start ===== -->
+      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+        <!-- Small Device Overlay Start -->
+        <include src="./partials/overlay.html" />
+        <!-- Small Device Overlay End -->
+
+        <!-- ===== Header Start ===== -->
+        <include src="./partials/header.html" />
+        <!-- ===== Header End ===== -->
+
+        <!-- ===== Main Content Start ===== -->
+        <main>
+          <!-- Title -->
+          <div class="p-4 md:ml-[15px] mt-4">
+            <div class="mb-1">
+              <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+                Welcome
+              </h2>
+              <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
+                Here's a summary of your money this past month
+              </span>
+            </div>
+          </div>
+          
+          <!-- Metrics and chart area-->
+          <div class="p-4 mx-auto w-full max-w-screen-xl md:p-6">
+            <div class="space-y-6">
+              <!-- User Dashboard Content -->
+              <div>
+                <!-- Metric Group One -->
+                <div class="w-full mb-9">
+                  <include src="./partials/metric-group/metric-group-01.html" />
+                </div>
+                <!-- Chart -->
+                <div class="w-full mb-6">
+                  <include src="./partials/chart/chart-01.html" />
+                </div>
+                <!-- Recent Transactions -->
+                <div class="w-full">
+                  <include src="./partials/table/tableTrans.html" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <!-- ===== Main Content End ===== -->
+      </div>
+      <!-- ===== Content Area End ===== -->
+    </div>
+    <!-- ===== Page Wrapper End ===== -->
+  </body>
+</html>

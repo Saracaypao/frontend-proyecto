@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Buddy | Personal Finance Manager</title>
+  <style>
+    html, body {
+      height: 100%;
+    }
+  </style>
+</head>
+<body data-page="landing" class="relative bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen z-0" >
+  <div id="landing-root" class="flex-1">
+
+    <nav class="px-6 py-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center">
+        <img src="/src/images/logo/logo.svg" alt="Budget Buddy Logo" class="h-8 w-auto dark:hidden">
+        <img src="/src/images/logo/logo-dark.svg" alt="Budget Buddy Logo" class="h-8 w-auto hidden dark:block">
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="themeToggle" class="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+          </svg>
+          <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+        </button>
+        <a href="signin.html" class="text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400">Sign In</a>
+        <a href="signup.html" class="text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 px-4 py-2 rounded-md">Sign Up</a>
+      </div>
+    </nav>
+
+    <section class="py-12 px-6 max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Take Control of Your <span class="text-brand-500">Finances</span>
+          </h1>
+          <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+            Budget Buddy helps you track expenses, set savings goals, and manage your money with ease.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="signin.html" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md text-center">
+              Sign In
+            </a>
+            <a href="signup.html" class="px-6 py-3 border border-brand-500 text-brand-500 hover:bg-brand-50 dark:hover:bg-gray-800 font-medium rounded-md text-center">
+              Create Account
+            </a>
+          </div>
+        </div>
+    </section>
+  </div>
+
+    <div class="absolute top-0 right-0 z-[-10] max-w-[500px] opacity-90 mix-blend-overlay pointer-events-none">
+        <img src="/src/images/shape/grid-01.svg" alt="Decorative grid" class="w-full h-auto" />
+    </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-gray-300 py-8 px-6 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+      <div class="mb-4 md:mb-0">
+        <img src="/src/images/logo/logo-dark.svg" alt="Budget Buddy Logo" class="h-6 w-auto">
+      </div>
+      <div class="text-sm">
+        © 2025 Budget Buddy. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
