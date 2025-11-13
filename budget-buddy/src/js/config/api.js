@@ -141,4 +141,4 @@ async function logout() {
   }
 }
 
-export { API_CONFIG, apiRequest, isAuthenticated, getUserInfo, logout }; 
+export { API_CONFIG, apiRequest, isAuthenticated, getUserInfo, logout };

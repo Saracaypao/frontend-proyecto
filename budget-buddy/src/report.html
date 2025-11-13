@@ -10,6 +10,7 @@
     <title>BudgetBuddy - Reportes</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        const LOCAL_API = 'http://localhost:8081';
         window.currentPage = 'report';
     </script>
   </head>
@@ -46,7 +47,7 @@
       async loadGeneralReport() {
         this.loading = true;
         try {
-          const response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/report', {
+          const response = await fetch(`${LOCAL_API}/report`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
@@ -70,7 +71,7 @@
       async loadReportByYear() {
         this.loading = true;
         try {
-          const response = await fetch(`https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/report/${this.selectedYear}`, {
+          const response = await fetch(`${LOCAL_API}/report/${this.selectedYear}`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
@@ -94,7 +95,7 @@
       async loadReportByMonth() {
         this.loading = true;
         try {
-          const response = await fetch(`https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/report/${this.selectedYear}/${this.selectedMonth}`, {
+          const response = await fetch(`${LOCAL_API}/report/${this.selectedYear}/${this.selectedMonth}`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
@@ -123,7 +124,7 @@
 
         this.loading = true;
         try {
-          const response = await fetch(`https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/report/range?startDate=${this.startDate}&endDate=${this.endDate}`, {
+          const response = await fetch(`${LOCAL_API}/report/range?startDate=${this.startDate}&endDate=${this.endDate}`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
@@ -340,7 +341,7 @@ getAvailableMonths() {
 
 async getLast6MonthsReport() {
   try {
-    const response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/report/last6months', {
+    const response = await fetch(`${LOCAL_API}/report/last6months`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
       }
@@ -422,6 +423,7 @@ async getLast6MonthsReport() {
         return `${((this.currentReport.totalExpenses / total) * 100).toFixed(1)}%`;
       }
     }"
+    x-init="init()"
     :class="{'dark bg-gray-900': darkMode === true}"
   >
     <!-- ===== Preloader Start ===== -->
@@ -632,7 +634,6 @@ async getLast6MonthsReport() {
   
   <!-- auth guard simple -->
   <script type="module">
-
     function checkAuth() {
       const token = localStorage.getItem('jwtToken');
       if (!token) {
@@ -640,7 +641,7 @@ async getLast6MonthsReport() {
         return;
       }
       
-      fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/auth/verify', {
+      fetch(`${LOCAL_API}/auth/verify`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
