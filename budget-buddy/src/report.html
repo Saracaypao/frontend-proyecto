@@ -9,10 +9,68 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>BudgetBuddy - Reportes</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         const LOCAL_API = 'http://localhost:8081';
         window.currentPage = 'report';
     </script>
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      
+      .animate-fade-out {
+        animation: fadeOut 0.3s ease-out;
+      }
+
+      /* Estilos específicos para la impresión PDF */
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+      
+      /* Asegurar que los gráficos se vean bien en PDF */
+      canvas {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+
+      /* Animación para el indicador de carga del PDF */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Ocultar indicadores de carga por defecto */
+      #pdf-loading-indicator {
+        display: none;
+      }
+    </style>
   </head>
   <body
     data-page="report"
@@ -400,8 +458,297 @@ async getLast6MonthsReport() {
         return [headers.join(','), values.join(',')].join('\n');
       },
 
+      async exportReportToPDF() {
+        if (!this.currentReport) {
+          this.showNotification('No hay reporte para exportar', 'error');
+          return;
+        }
+
+        try {
+          // Verificar que las librerías estén cargadas
+          if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+            throw new Error('PDF libraries not loaded');
+          }
+
+          // Actualizar información del header del PDF
+          const pdfHeader = document.getElementById('pdf-header');
+          const pdfPeriodText = document.getElementById('pdf-period-text');
+          const pdfGenerationDate = document.getElementById('pdf-generation-date');
+          
+          if (pdfPeriodText) {
+            pdfPeriodText.textContent = `Period: ${this.getPeriodText()}`;
+          }
+          if (pdfGenerationDate) {
+            const now = new Date();
+            pdfGenerationDate.textContent = `Generated on: ${now.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}`;
+          }
+          
+          // Mostrar el header temporalmente para la captura
+          if (pdfHeader) {
+            pdfHeader.classList.remove('hidden');
+          }
+
+          // Mostrar indicador de carga
+          this.showLoadingIndicator();
+
+          // Esperar un momento para que el DOM se actualice
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Obtener el elemento a exportar
+          const element = document.getElementById('report-content-area');
+          if (!element) {
+            throw new Error('Report content not found');
+          }
+
+          // Capturar el contenido con html2canvas
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight,
+            ignoreElements: function(element) {
+              return false;
+            },
+            onclone: function(clonedDoc) {
+              // Forzar fondo blanco en el contenedor principal
+              const reportArea = clonedDoc.getElementById('report-content-area');
+              if (reportArea) {
+                reportArea.style.backgroundColor = '#ffffff';
+              }
+              
+              // Aplicar estilos optimizados para PDF a todos los elementos
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach(el => {
+                try {
+                  // Remover todas las clases dark mode
+                  if (el.classList) {
+                    el.classList.remove('dark:bg-gray-800', 'dark:bg-gray-900', 'dark:text-white', 'dark:text-gray-400', 'dark:border-gray-800');
+                  }
+                  
+                  // Obtener estilos computados de forma segura
+                  const computedStyle = window.getComputedStyle(el);
+                  
+                  // Reemplazar cualquier referencia a oklch con colores seguros
+                  const styleText = el.getAttribute('style') || '';
+                  if (styleText.includes('oklch')) {
+                    el.setAttribute('style', styleText.replace(/oklch\([^)]+\)/g, '#1f2937'));
+                  }
+                  
+                  // Forzar fondos blancos en tarjetas
+                  if (el.classList.contains('pdf-card') || el.classList.contains('bg-white')) {
+                    el.style.setProperty('background-color', '#ffffff', 'important');
+                    el.style.setProperty('border', '2px solid #e5e7eb', 'important');
+                  }
+                  
+                  // Convertir fondos oscuros a blancos
+                  const bgColor = computedStyle.backgroundColor;
+                  if (bgColor && (bgColor.includes('rgb(17') || bgColor.includes('rgb(31') || bgColor.includes('rgb(55') || bgColor.includes('rgb(37'))) {
+                    el.style.setProperty('background-color', '#ffffff', 'important');
+                  }
+                  
+                  // Convertir textos blancos a oscuros
+                  const textColor = computedStyle.color;
+                  if (textColor && (textColor.includes('rgb(255') || textColor.includes('rgb(243') || textColor.includes('rgb(229'))) {
+                    el.style.setProperty('color', '#1f2937', 'important');
+                  }
+                  
+                  // Optimizar textos de métricas
+                  if (el.id === 'report-total-income') {
+                    el.style.setProperty('color', '#16a34a', 'important'); // green-600
+                  } else if (el.id === 'report-total-expenses') {
+                    el.style.setProperty('color', '#dc2626', 'important'); // red-600
+                  } else if (el.id === 'report-balance') {
+                    el.style.setProperty('color', '#2563eb', 'important'); // blue-600
+                  } else if (el.id === 'report-total-transactions') {
+                    el.style.setProperty('color', '#9333ea', 'important'); // purple-600
+                  }
+                  
+                  // Optimizar labels
+                  if (el.textContent === 'Total income' || el.textContent === 'Total expenditure' || 
+                      el.textContent === 'Balance' || el.textContent === 'Transactions') {
+                    el.style.setProperty('color', '#6b7280', 'important'); // gray-500
+                  }
+                  
+                  // Asegurar que los SVG sean visibles
+                  if (el.tagName === 'svg') {
+                    const parent = el.closest('.bg-green-100, .bg-red-100, .bg-blue-100, .bg-purple-100');
+                    if (parent && parent.classList.contains('bg-green-100')) {
+                      el.style.setProperty('color', '#16a34a', 'important');
+                    } else if (parent && parent.classList.contains('bg-red-100')) {
+                      el.style.setProperty('color', '#dc2626', 'important');
+                    } else if (parent && parent.classList.contains('bg-blue-100')) {
+                      el.style.setProperty('color', '#2563eb', 'important');
+                    } else if (parent && parent.classList.contains('bg-purple-100')) {
+                      el.style.setProperty('color', '#9333ea', 'important');
+                    }
+                  }
+                  
+                  // Mejorar fondos de íconos
+                  if (el.classList.contains('bg-green-100')) {
+                    el.style.setProperty('background-color', '#dcfce7', 'important');
+                  } else if (el.classList.contains('bg-red-100')) {
+                    el.style.setProperty('background-color', '#fee2e2', 'important');
+                  } else if (el.classList.contains('bg-blue-100')) {
+                    el.style.setProperty('background-color', '#dbeafe', 'important');
+                  } else if (el.classList.contains('bg-purple-100')) {
+                    el.style.setProperty('background-color', '#f3e8ff', 'important');
+                  }
+                  
+                } catch (e) {
+                  // Ignorar errores en elementos individuales
+                  console.warn('Error processing element:', e);
+                }
+              });
+              
+              // Optimizar el header del PDF
+              const pdfHeader = clonedDoc.getElementById('pdf-header');
+              if (pdfHeader) {
+                pdfHeader.style.setProperty('background', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'important');
+                pdfHeader.style.setProperty('color', '#ffffff', 'important');
+              }
+              
+              // Asegurar que los canvas (gráficos) tengan fondo blanco
+              const canvases = clonedDoc.querySelectorAll('canvas');
+              canvases.forEach(canvas => {
+                const parent = canvas.parentElement;
+                if (parent) {
+                  parent.style.setProperty('background-color', '#ffffff', 'important');
+                }
+              });
+            }
+          });
+
+          // Calcular dimensiones del PDF
+          const imgWidth = 210; // A4 width in mm
+          const pageHeight = 297; // A4 height in mm
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+
+          // Crear PDF usando jsPDF
+          const { jsPDF } = jspdf;
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const imgData = canvas.toDataURL('image/png');
+
+          let position = 0;
+
+          // Agregar imagen al PDF (con paginación si es necesario)
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+
+          // Agregar metadata al PDF
+          pdf.setProperties({
+            title: 'Budget Buddy - Financial Report',
+            subject: 'Personal Financial Report',
+            author: 'Budget Buddy',
+            keywords: 'finance, report, budget',
+            creator: 'Budget Buddy App'
+          });
+
+          // Generar nombre de archivo
+          const date = new Date().toISOString().split('T')[0];
+          let fileName = `BudgetBuddy_Report_${date}`;
+
+          if (this.selectedPeriod === 'year') {
+            fileName = `BudgetBuddy_Report_${this.selectedYear}_${date}`;
+          } else if (this.selectedPeriod === 'month') {
+            fileName = `BudgetBuddy_Report_${this.selectedYear}_${String(this.selectedMonth).padStart(2, '0')}_${date}`;
+          } else if (this.selectedPeriod === 'range' && this.startDate && this.endDate) {
+            fileName = `BudgetBuddy_Report_${this.startDate}_to_${this.endDate}_${date}`;
+          }
+
+          // Descargar el PDF
+          pdf.save(`${fileName}.pdf`);
+          
+          // Ocultar el header
+          if (pdfHeader) {
+            pdfHeader.classList.add('hidden');
+          }
+
+          // Ocultar indicador de carga
+          this.hideLoadingIndicator();
+          
+          this.showNotification('PDF generated successfully', 'success');
+        } catch (error) {
+          console.error('Error exportando a PDF:', error);
+          this.showNotification('Error generating PDF: ' + error.message, 'error');
+          
+          // Asegurar que el header se oculte en caso de error
+          const pdfHeader = document.getElementById('pdf-header');
+          if (pdfHeader) {
+            pdfHeader.classList.add('hidden');
+          }
+          
+          this.hideLoadingIndicator();
+        }
+      },
+
+      showLoadingIndicator() {
+        const existingIndicator = document.getElementById('pdf-loading-indicator');
+        if (existingIndicator) {
+          existingIndicator.style.display = 'flex';
+          return;
+        }
+
+        const indicator = document.createElement('div');
+        indicator.id = 'pdf-loading-indicator';
+        indicator.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        
+        const spinner = document.createElement('div');
+        spinner.style.cssText = 'border: 4px solid #f3f3f3; border-top: 4px solid #465fff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;';
+        
+        const text = document.createElement('p');
+        text.style.cssText = 'margin: 0; font-size: 16px; color: #333;';
+        text.textContent = 'Generating PDF...';
+        
+        wrapper.appendChild(spinner);
+        wrapper.appendChild(text);
+        indicator.appendChild(wrapper);
+        document.body.appendChild(indicator);
+      },
+
+      hideLoadingIndicator() {
+        const indicator = document.getElementById('pdf-loading-indicator');
+        if (indicator) {
+          indicator.style.display = 'none';
+        }
+      },
+
       showNotification(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);
+        
+        // Crear notificación visual
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white ${
+          type === 'success' ? 'bg-green-500' : 
+          type === 'error' ? 'bg-red-500' : 
+          type === 'warning' ? 'bg-yellow-500' : 
+          'bg-blue-500'
+        } animate-fade-in`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.classList.add('animate-fade-out');
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
       },
 
       get balanceIcon() {
@@ -461,9 +808,18 @@ async getLast6MonthsReport() {
                   Detailed analysis of your financial status
                 </span>
               </div>
-              <div>
-                <button @click="exportReport()" class="bg-brand-500 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                  <i class="fas fa-download mr-2"></i>Export
+              <div class="flex gap-2">
+                <button @click="exportReportToPDF()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                  </svg>
+                  Export to PDF
+                </button>
+                <button @click="exportReport()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  Export CSV
                 </button>
               </div>
             </div>
@@ -473,7 +829,7 @@ async getLast6MonthsReport() {
           <div class="p-4 mx-auto w-full max-w-screen-xl md:p-6">
             <div class="space-y-6">
               <!-- period filters -->
-              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8" id="report-filters">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select period</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <!-- report type -->
@@ -522,18 +878,32 @@ async getLast6MonthsReport() {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <!-- Contenedor para exportar a PDF -->
+              <div id="report-content-area">
+                <!-- Header del reporte para PDF -->
+                <div class="rounded-lg shadow-sm p-8 mb-6 hidden" id="pdf-header">
+                  <div class="text-center">
+                    <h1 class="text-4xl font-bold mb-2">Budget Buddy</h1>
+                    <h2 class="text-2xl font-semibold mb-4">Financial Report</h2>
+                    <p class="text-lg" id="pdf-period-text"></p>
+                    <p class="text-sm mt-2" id="pdf-generation-date"></p>
+                  </div>
+                </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="metrics-cards">
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-arrow-up text-green-600 dark:text-green-400"></i>
+                      <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
                       </div>
                     </div>
                     <div class="ml-4">
-                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total income</p>
-                      <p id="report-total-income" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                      <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total income</p>
+                      <p id="report-total-income" class="text-2xl font-bold text-green-600 dark:text-green-400">$0.00</p>
                     </div>
                   </div>
                 </div>
@@ -541,13 +911,15 @@ async getLast6MonthsReport() {
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-arrow-down text-red-600 dark:text-red-400"></i>
+                      <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
                       </div>
                     </div>
                     <div class="ml-4">
-                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total expenditure</p>
-                      <p id="report-total-expenses" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                      <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total expenditure</p>
+                      <p id="report-total-expenses" class="text-2xl font-bold text-red-600 dark:text-red-400">$0.00</p>
                     </div>
                   </div>
                 </div>
@@ -555,13 +927,15 @@ async getLast6MonthsReport() {
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-chart-line text-blue-600 dark:text-blue-400"></i>
+                      <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
                       </div>
                     </div>
                     <div class="ml-4">
-                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Balance</p>
-                      <p id="report-balance" class="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
+                      <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Balance</p>
+                      <p id="report-balance" class="text-2xl font-bold text-blue-600 dark:text-blue-400">$0.00</p>
                     </div>
                   </div>
                 </div>
@@ -569,13 +943,15 @@ async getLast6MonthsReport() {
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-receipt text-purple-600 dark:text-purple-400"></i>
+                      <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                       </div>
                     </div>
                     <div class="ml-4">
-                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Transactions</p>
-                      <p id="report-total-transactions" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                      <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Transactions</p>
+                      <p id="report-total-transactions" class="text-2xl font-bold text-purple-600 dark:text-purple-400">0</p>
                     </div>
                   </div>
                 </div>
@@ -614,6 +990,8 @@ async getLast6MonthsReport() {
                   </div>
                 </div>
               </div>
+              </div>
+              <!-- Fin del contenedor para exportar a PDF -->
 
               <!-- Loading State -->
               <div x-show="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
