@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
     <script>
         const LOCAL_API = 'http://localhost:8081';
         window.currentPage = 'report';
@@ -428,34 +429,270 @@ async getLast6MonthsReport() {
         }
       },
 
-      exportReport() {
+      async exportReportToExcel() {
         if (!this.currentReport) {
           this.showNotification('No hay reporte para exportar', 'error');
           return;
         }
 
-        const data = {
-          periodo: this.getPeriodText(),
-          totalIngresos: this.currentReport.totalIncome,
-          totalExpenses: this.currentReport.totalExpenses,
-          balance: this.currentReport.balance,
-          totalTransacciones: this.currentReport.totalTransactions
-        };
+        try {
+          if (typeof ExcelJS === 'undefined') {
+            this.showNotification('ExcelJS library not loaded', 'error');
+            return;
+          }
 
-        const csv = this.convertToCSV(data);
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reporte_${this.getPeriodText().replace(/\s+/g, '_')}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
+          this.showLoadingIndicator();
 
-      convertToCSV(data) {
-        const headers = Object.keys(data);
-        const values = Object.values(data);
-        return [headers.join(','), values.join(',')].join('\n');
+          const captureChart = async (canvasId) => {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            return canvas.toDataURL('image/png');
+          };
+
+          const currentReportChart = await captureChart('current-report-chart');
+          const last6MonthsChart = await captureChart('last-6-months-chart');
+
+          const workbook = new ExcelJS.Workbook();
+          workbook.creator = 'Budget Buddy';
+          workbook.created = new Date();
+
+          const worksheet = workbook.addWorksheet('Resumen', {
+            properties: { tabColor: { argb: '4F46E5' } }
+          });
+
+          worksheet.columns = [
+            { width: 30 },
+            { width: 25 },
+            { width: 8 },
+            { width: 30 },
+            { width: 30 }
+          ];
+
+          const titleRow = worksheet.addRow(['BUDGET BUDDY - REPORTE FINANCIERO']);
+          worksheet.mergeCells('A1:B1');
+          titleRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+          titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } };
+          titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+          titleRow.height = 25;
+          
+          const periodRow = worksheet.addRow(['Período:', this.getPeriodText()]);
+          periodRow.getCell(1).font = { bold: true };
+          
+          const dateRow = worksheet.addRow(['Fecha de Generación:', new Date().toLocaleDateString('es-ES', { 
+            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+          })]);
+          dateRow.getCell(1).font = { bold: true };
+
+          worksheet.addRow([]);
+
+          const summaryHeaderRow = worksheet.addRow(['RESUMEN FINANCIERO']);
+          worksheet.mergeCells(`A${summaryHeaderRow.number}:B${summaryHeaderRow.number}`);
+          summaryHeaderRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+          summaryHeaderRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6366F1' } };
+          summaryHeaderRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+          const headerRow = worksheet.addRow(['Concepto', 'Monto']);
+          headerRow.font = { bold: true };
+          headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+          headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+          worksheet.addRow(['Total Ingresos', this.currentReport.totalIncome]);
+          worksheet.getCell(`B${worksheet.lastRow.number}`).numFmt = '$#,##0.00';
+          
+          worksheet.addRow(['Total Gastos', this.currentReport.totalExpenses]);
+          worksheet.getCell(`B${worksheet.lastRow.number}`).numFmt = '$#,##0.00';
+          
+          const balanceRow = worksheet.addRow(['Balance', this.currentReport.balance]);
+          balanceRow.getCell(1).font = { bold: true };
+          balanceRow.getCell(2).font = { bold: true };
+          balanceRow.getCell(2).numFmt = '$#,##0.00';
+          balanceRow.getCell(2).fill = { 
+            type: 'pattern', 
+            pattern: 'solid', 
+            fgColor: { argb: this.currentReport.balance >= 0 ? 'D1FAE5' : 'FEE2E2' } 
+          };
+          balanceRow.getCell(2).font = { 
+            bold: true, 
+            color: { argb: this.currentReport.balance >= 0 ? '065F46' : '991B1B' } 
+          };
+
+          worksheet.addRow(['Total Transacciones', this.currentReport.totalTransactions]);
+
+          worksheet.addRow([]);
+
+          const percentHeaderRow = worksheet.addRow(['ANÁLISIS PORCENTUAL']);
+          worksheet.mergeCells(`A${percentHeaderRow.number}:B${percentHeaderRow.number}`);
+          percentHeaderRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+          percentHeaderRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6366F1' } };
+          percentHeaderRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+          const percentHeader = worksheet.addRow(['Concepto', 'Porcentaje']);
+          percentHeader.font = { bold: true };
+          percentHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+          percentHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+
+          const total = this.currentReport.totalIncome + this.currentReport.totalExpenses;
+          const incomePercent = total > 0 ? (this.currentReport.totalIncome / total) : 0;
+          const expensePercent = total > 0 ? (this.currentReport.totalExpenses / total) : 0;
+
+          const incomeRow = worksheet.addRow(['% Ingresos', incomePercent]);
+          incomeRow.getCell(2).numFmt = '0.00%';
+          
+          const expenseRow = worksheet.addRow(['% Gastos', expensePercent]);
+          expenseRow.getCell(2).numFmt = '0.00%';
+
+          if (currentReportChart) {
+            const chartHeaderRow = worksheet.getRow(5);
+            chartHeaderRow.getCell(4).value = 'DISTRIBUCIÓN ACTUAL';
+            worksheet.mergeCells('D5:E5');
+            chartHeaderRow.getCell(4).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+            chartHeaderRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6366F1' } };
+            chartHeaderRow.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+            chartHeaderRow.getCell(4).border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+            chartHeaderRow.height = 25;
+
+            const imageId1 = workbook.addImage({
+              base64: currentReportChart,
+              extension: 'png',
+            });
+
+            worksheet.addImage(imageId1, {
+              tl: { col: 3, row: 6 },
+              ext: { width: 460, height: 290 }
+            });
+          }
+
+          worksheet.eachRow((row, rowNumber) => {
+            row.eachCell((cell, colNumber) => {
+              if (colNumber <= 2) {
+                cell.border = {
+                  top: { style: 'thin' },
+                  left: { style: 'thin' },
+                  bottom: { style: 'thin' },
+                  right: { style: 'thin' }
+                };
+              }
+            });
+          });
+
+          if (this.last6MonthsData && this.last6MonthsData.length > 0) {
+            const worksheet2 = workbook.addWorksheet('Histórico 6 Meses', {
+              properties: { tabColor: { argb: '4F46E5' } }
+            });
+
+            worksheet2.columns = [
+              { width: 18 },
+              { width: 18 },
+              { width: 18 },
+              { width: 18 },
+              { width: 5 },
+              { width: 30 },
+              { width: 30 }
+            ];
+
+            const title2Row = worksheet2.addRow(['HISTÓRICO - ÚLTIMOS 6 MESES']);
+            worksheet2.mergeCells('A1:D1');
+            title2Row.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+            title2Row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } };
+            title2Row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+            title2Row.height = 25;
+
+            worksheet2.addRow([]);
+
+            const header2Row = worksheet2.addRow(['Mes', 'Ingresos', 'Gastos', 'Balance']);
+            header2Row.font = { bold: true };
+            header2Row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+            header2Row.alignment = { vertical: 'middle', horizontal: 'center' };
+
+            this.last6MonthsData.forEach(item => {
+              const balance = (item.income || 0) - (item.expenses || 0);
+              const dataRow = worksheet2.addRow([
+                item.month,
+                item.income || 0,
+                item.expenses || 0,
+                balance
+              ]);
+              
+              dataRow.getCell(2).numFmt = '$#,##0.00';
+              dataRow.getCell(3).numFmt = '$#,##0.00';
+              dataRow.getCell(4).numFmt = '$#,##0.00';
+              
+              dataRow.getCell(4).fill = { 
+                type: 'pattern', 
+                pattern: 'solid', 
+                fgColor: { argb: balance >= 0 ? 'D1FAE5' : 'FEE2E2' } 
+              };
+              dataRow.getCell(4).font = { 
+                color: { argb: balance >= 0 ? '065F46' : '991B1B' } 
+              };
+            });
+
+            if (last6MonthsChart) {
+              const chartHeader2Row = worksheet2.getRow(1);
+              chartHeader2Row.getCell(6).value = 'GRÁFICO HISTÓRICO';
+              worksheet2.mergeCells('F1:G1');
+              chartHeader2Row.getCell(6).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+              chartHeader2Row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6366F1' } };
+              chartHeader2Row.getCell(6).alignment = { vertical: 'middle', horizontal: 'center' };
+              chartHeader2Row.getCell(6).border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+              };
+              chartHeader2Row.height = 25;
+
+              const imageId2 = workbook.addImage({
+                base64: last6MonthsChart,
+                extension: 'png',
+              });
+
+              worksheet2.addImage(imageId2, {
+                tl: { col: 5.1, row: 0.9 },
+                ext: { width: 500, height: 280 }
+              });
+            }
+
+            worksheet2.eachRow((row) => {
+              row.eachCell((cell, colNumber) => {
+                if (colNumber <= 4) {
+                  cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                  };
+                }
+              });
+            });
+          }
+
+          const date = new Date().toISOString().split('T')[0];
+          const period = this.getPeriodText().replace(/\s+/g, '_');
+          const fileName = 'BudgetBuddy_Report_' + period + '_' + date + '.xlsx';
+
+          const buffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          window.URL.revokeObjectURL(url);
+
+          this.hideLoadingIndicator();
+          this.showNotification('Excel generado exitosamente', 'success');
+
+        } catch (error) {
+          console.error('Error generando Excel:', error);
+          this.hideLoadingIndicator();
+          this.showNotification('Error al generar Excel: ' + error.message, 'error');
+        }
       },
 
       async exportReportToPDF() {
@@ -1433,11 +1670,12 @@ async getLast6MonthsReport() {
                   </svg>
                   Export to PDF
                 </button>
-                <button @click="exportReport()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                <button @click="exportReportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v4h5"></path>
                   </svg>
-                  Export CSV
+                  Export to Excel
                 </button>
               </div>
             </div>
