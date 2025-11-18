@@ -23,7 +23,17 @@
           newTransaction: { description: '', categoryId: '', date: '', type: 'EXPENSE', isPublic: false, amount: null }, 
           newCategory: { name: '' },
           transactions: [], categories: [],
-          filters: { category: '', date: '', type: '' }, showFilters: false, filteredTransactions: [],
+          filters: { 
+            startDate: '', 
+            endDate: '', 
+            minAmount: '', 
+            maxAmount: '', 
+            selectedCategories: [], 
+            type: '',
+            description: ''
+          }, 
+          showFilters: false, 
+          filteredTransactions: [],
           loading: false,
           
           async init() {
@@ -67,6 +77,11 @@
               if (response.ok) {
                 const serverData = await response.json();
                 this.transactions = serverData || [];
+                console.log('Transactions loaded:', this.transactions);
+                if (this.transactions.length > 0) {
+                  console.log('Sample transaction:', this.transactions[0]);
+                  console.log('All keys:', Object.keys(this.transactions[0]));
+                }
                 this.updateTransactionTable();
               } else {
                 console.error('Error en la respuesta del servidor:', response.status);
@@ -218,25 +233,87 @@
           },
           
           applyFilters() {
-            // see if theres transactions
             if (!this.transactions || !Array.isArray(this.transactions)) {
               console.error('There are no transactions available to filter.');
               this.showNotification('No transactions available', 'error');
               return;
             }
             
+            // Determinar si hay filtros activos
+            const hasActiveFilters = this.filters.startDate || this.filters.endDate || 
+                                    this.filters.minAmount !== '' || this.filters.maxAmount !== '' ||
+                                    this.filters.selectedCategories.length > 0 || this.filters.type !== '' ||
+                                    this.filters.description !== '';
+            
+            // Si no hay filtros activos, mostrar todas las transacciones
+            if (!hasActiveFilters) {
+              this.updateTransactionTable();
+              return;
+            }
+            
             this.filteredTransactions = this.transactions.filter(tx => {
-              // backend
-              const categoryName = tx.categoryName || '';
+              let matches = true;
               
-              return (this.filters.category === '' || categoryName.toLowerCase().includes(this.filters.category.toLowerCase())) &&
-                     (this.filters.date === '' || tx.date === this.filters.date) &&
-                     (this.filters.type === '' || tx.type === this.filters.type);
+              // Filtro por descripción
+              if (this.filters.description !== '') {
+                const searchTerm = this.filters.description.toLowerCase();
+                const description = (tx.description || '').toLowerCase();
+                matches = matches && description.includes(searchTerm);
+              }
+              
+              // Filtro por rango de fechas
+              if (this.filters.startDate) {
+                matches = matches && tx.date >= this.filters.startDate;
+              }
+              if (this.filters.endDate) {
+                matches = matches && tx.date <= this.filters.endDate;
+              }
+              
+              // Filtro por rango de montos
+              if (this.filters.minAmount !== '' && this.filters.minAmount !== null) {
+                matches = matches && tx.amount >= parseFloat(this.filters.minAmount);
+              }
+              if (this.filters.maxAmount !== '' && this.filters.maxAmount !== null) {
+                matches = matches && tx.amount <= parseFloat(this.filters.maxAmount);
+              }
+              
+              // Filtro por categorías múltiples
+              if (this.filters.selectedCategories.length > 0) {
+                // Intentar obtener el categoryId de diferentes maneras
+                let txCategoryId = '';
+                if (tx.categoryId) {
+                  txCategoryId = tx.categoryId.toString();
+                } else if (tx.category && tx.category.id) {
+                  txCategoryId = tx.category.id.toString();
+                } else if (tx.category_id) {
+                  txCategoryId = tx.category_id.toString();
+                } else if (tx.categoryName && this.categories.length > 0) {
+                  // Buscar el ID de la categoría por su nombre
+                  const category = this.categories.find(cat => cat.name === tx.categoryName);
+                  if (category) {
+                    txCategoryId = category.id.toString();
+                  }
+                }
+                
+                const categoryMatch = this.filters.selectedCategories.includes(txCategoryId);
+                console.log('Transaction:', tx.description, 'CategoryName:', tx.categoryName, 'CategoryId:', txCategoryId, 'Selected:', this.filters.selectedCategories, 'Match:', categoryMatch);
+                matches = matches && categoryMatch;
+              }
+              
+              // Filtro por tipo
+              if (this.filters.type !== '') {
+                matches = matches && tx.type === this.filters.type;
+              }
+              
+              return matches;
             });
+            
+            console.log('Filtered transactions:', this.filteredTransactions.length);
             
             // updating after filtering
             if (window.renderTransactionTable) {
-              const formattedTransactions = this.filteredTransactions.map(tx => {
+              const transactionsToRender = this.filteredTransactions.length > 0 ? this.filteredTransactions : [];
+              const formattedTransactions = transactionsToRender.map(tx => {
                 // category name comes from backend
                 const categoryName = tx.categoryName || 'No category';
                 
@@ -275,14 +352,48 @@
                 }
               );
             }
-            
-            this.showFilters = false;
           },
           
           clearFilters() {
-            this.filters = { category: '', date: '', type: '' };
+            this.filters = { 
+              startDate: '', 
+              endDate: '', 
+              minAmount: '', 
+              maxAmount: '', 
+              selectedCategories: [], 
+              type: '',
+              description: ''
+            };
             this.filteredTransactions = [];
-            this.fetchTransactions();
+            this.updateTransactionTable();
+            this.showNotification('Filters cleared', 'success');
+          },
+          
+          toggleCategory(categoryId) {
+            if (!categoryId) return;
+            
+            // Asegurarse de que selectedCategories sea un array
+            if (!Array.isArray(this.filters.selectedCategories)) {
+              this.filters.selectedCategories = [];
+            }
+            
+            const categoryIdStr = categoryId.toString();
+            const index = this.filters.selectedCategories.indexOf(categoryIdStr);
+            if (index > -1) {
+              this.filters.selectedCategories.splice(index, 1);
+            } else {
+              this.filters.selectedCategories.push(categoryIdStr);
+            }
+            
+            console.log('Selected categories:', this.filters.selectedCategories);
+            console.log('Total transactions:', this.transactions.length);
+            
+            this.applyFilters();
+          },
+          
+          isCategorySelected(categoryId) {
+            if (!categoryId) return false;
+            return this.filters.selectedCategories.includes(categoryId.toString());
           },
           
           openCategoryModal() {
@@ -1065,7 +1176,7 @@
             <div class="mt-4 flex gap-2">
               <button
                 @click="openNewTransactionModal()"
-                class="inline-flex items-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-brand-500 dark:hover:bg-brand-600""
+                class="inline-flex items-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-brand-500 dark:hover:bg-brand-600"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -1074,13 +1185,137 @@
               </button>
               <button
                 @click="openCategoryModal()"
-                class="inline-flex items-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-brand-500 dark:hover:bg-brand-600""
+                class="inline-flex items-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-brand-500 dark:hover:bg-brand-600"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
                 New category
               </button>
+              <button
+                @click="showFilters = !showFilters"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                </svg>
+                Filters
+              </button>
+            </div>
+          </div>
+          
+          <!-- Advanced Filters Section -->
+          <div x-show="showFilters" x-transition class="p-4 mx-auto max-w-7xl">
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Advanced Filters</h3>
+                <button 
+                  @click="clearFilters()" 
+                  class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                >
+                  Clear all filters
+                </button>
+              </div>
+              
+              <!-- Search by Description -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                  Search by Description
+                </label>
+                <input 
+                  type="text" 
+                  x-model="filters.description"
+                  @input="applyFilters()"
+                  class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                  placeholder="Type to search transactions by description..."
+                />
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Date Range Filter -->
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                  <div class="space-y-2">
+                    <input 
+                      type="date" 
+                      x-model="filters.startDate"
+                      @change="applyFilters()"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                      placeholder="Start date"
+                    />
+                    <input 
+                      type="date" 
+                      x-model="filters.endDate"
+                      @change="applyFilters()"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                      placeholder="End date"
+                    />
+                  </div>
+                </div>
+                
+                <!-- Amount Range Filter -->
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Range</label>
+                  <div class="space-y-2">
+                    <input 
+                      type="number" 
+                      x-model="filters.minAmount"
+                      @input="applyFilters()"
+                      step="0.01"
+                      min="0"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                      placeholder="Min amount"
+                    />
+                    <input 
+                      type="number" 
+                      x-model="filters.maxAmount"
+                      @input="applyFilters()"
+                      step="0.01"
+                      min="0"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                      placeholder="Max amount"
+                    />
+                  </div>
+                </div>
+                
+                <!-- Transaction Type Filter -->
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Transaction Type</label>
+                  <select 
+                    x-model="filters.type"
+                    @change="applyFilters()"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
+                  >
+                    <option value="">All types</option>
+                    <option value="INCOME">Income</option>
+                    <option value="EXPENSE">Expense</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Categories Filter (Multi-select) -->
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categories</label>
+                <div class="flex flex-wrap gap-2">
+                  <template x-for="category in categories" :key="category.id">
+                    <button
+                      @click="toggleCategory(category.id)"
+                      :class="{
+                        'bg-brand-500 text-white border-brand-500': isCategorySelected(category.id),
+                        'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600': !isCategorySelected(category.id)
+                      }"
+                      class="px-3 py-1.5 text-sm font-medium rounded-full border transition-colors"
+                      x-text="category.name"
+                    ></button>
+                  </template>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <span x-text="filters.selectedCategories.length"></span> categories selected
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1101,89 +1336,6 @@
     </div>
 
     <div class="flex items-center gap-3 relative">
-      <button
-        @click="showFilters = true"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      >
-        <svg
-          class="stroke-current fill-white dark:fill-gray-800"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M2.29004 5.90393H17.7067"
-            stroke=""
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M17.7075 14.0961H2.29085"
-            stroke=""
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331 12.0826 3.33331Z"
-            fill=""
-            stroke=""
-            stroke-width="1.5"
-          />
-          <path
-            d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z"
-            fill=""
-            stroke=""
-            stroke-width="1.5"
-          />
-        </svg>
-
-        Filter
-      </button>
-
-       
-<div
-  x-show="showFilters"
-  x-transition
-  @click.outside="showFilters = false"
-  class="absolute right-0 top-full mt-2 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-xl"
->
-  <div class="flex flex-col gap-4">
-    <div>
-      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-      <input type="text" x-model="filters.category"
-             class="w-full mt-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white" />
-    </div>
-
-    <div>
-      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
-      <input type="date" x-model="filters.date"
-             class="w-full mt-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white" />
-    </div>
-
-    <div class="flex justify-end gap-2 mt-2">
-      <button @click="showFilters = false"
-              class="px-4 py-2 rounded-lg bg-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
-        Cancel
-      </button>
-      
-      <button @click="filters = { category: '', date: '', visibility: '' }; renderTransactionTable(window.transactions); showFilters = false"
-            class="px-4 py-2 rounded-lg bg-[#6495ED] text-sm font-medium text-white hover:bg-[#99b8f2] dark:bg-[#6495ED] dark:text-white dark:hover:bg-[#5485de]">
-        Reset
-      </button>
-
-      <button @click="applyFilters"
-              class="px-4 py-2 rounded-lg bg-[#465fff] text-sm font-medium text-white hover:bg-[#3a52d4]">
-        Apply Filters
-      </button>
-    </div>
-  </div>
-</div>
-
-
       <button
         @click="isTransactionModal = true"
         class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"

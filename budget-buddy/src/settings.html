@@ -26,10 +26,221 @@
           confirmPassword: '',
           passwordError: '',
           passwordSuccess: false,
+          firstName: '',
+          lastName: '',
+          email: '',
+          bio: '',
+          role: 'USER',
+          profileError: '',
+          profileSuccess: false,
           
           init() {
             this.darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
             this.$watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+            this.loadUserProfile();
+          },
+          
+          async loadUserProfile() {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            if (userInfo.fullName) {
+              const names = userInfo.fullName.split(' ');
+              this.firstName = names[0] || '';
+              this.lastName = names.slice(1).join(' ') || '';
+            }
+            this.email = userInfo.email || '';
+            this.bio = userInfo.bio || '';
+            this.role = userInfo.role || '';
+            
+            // Fetch complete profile from API to get role and bio
+            try {
+              const token = localStorage.getItem('jwtToken');
+              if (token) {
+                const response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/users/profile', {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': 'Bearer ' + token
+                  }
+                });
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  this.firstName = data.firstName || this.firstName;
+                  this.lastName = data.lastName || this.lastName;
+                  this.email = data.email || this.email;
+                  this.bio = data.bio || '';
+                  this.role = data.role || 'USER';
+                  
+                  // Update localStorage with complete info
+                  const updatedUserInfo = {
+                    fullName: this.firstName + ' ' + this.lastName,
+                    email: this.email,
+                    bio: this.bio,
+                    role: this.role
+                  };
+                  localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+                }
+              }
+            } catch (error) {
+              console.error('Error loading profile:', error);
+            }
+          },
+          
+          async updateProfile() {
+            console.log('updateProfile called');
+            this.profileError = '';
+            this.profileSuccess = false;
+            
+            console.log('Data to update:', {
+              firstName: this.firstName,
+              lastName: this.lastName,
+              email: this.email,
+              bio: this.bio
+            });
+            
+            if (!this.firstName || !this.lastName) {
+              this.profileError = 'El nombre y apellido son requeridos.';
+              return;
+            }
+            
+            if (!this.email) {
+              this.profileError = 'El email es requerido.';
+              return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(this.email)) {
+              this.profileError = 'Por favor ingresa un email válido.';
+              return;
+            }
+            
+            try {
+              const token = localStorage.getItem('jwtToken');
+              if (!token) {
+                this.profileError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
+                this.showNotification('Sesión expirada. Redirigiendo al login...', 'error');
+                setTimeout(() => {
+                  window.location.href = '/signin.html';
+                }, 2000);
+                return;
+              }
+              
+              console.log('Sending request to API...');
+              
+              let response;
+              try {
+                response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/users/profile', {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                  },
+                  body: JSON.stringify({
+                    firstName: this.firstName,
+                    lastName: this.lastName,
+                    email: this.email,
+                    bio: this.bio
+                  })
+                });
+                
+                console.log('Response received, status:', response.status);
+              } catch (fetchError) {
+                console.error('Fetch error:', fetchError);
+                response = null;
+              }
+              
+              if (!response || response.status === 404) {
+                console.log('API endpoint not available, updating localStorage only');
+                
+                const userInfo = {
+                  fullName: this.firstName + ' ' + this.lastName,
+                  email: this.email,
+                  bio: this.bio,
+                  role: this.role
+                };
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                this.profileSuccess = true;
+                this.showNotification('Perfil actualizado exitosamente', 'success');
+                
+                setTimeout(() => {
+                  this.profileSuccess = false;
+                  window.location.reload();
+                }, 2000);
+                
+                return;
+              }
+              
+              if (response.ok) {
+                this.profileSuccess = true;
+                
+                const userInfo = {
+                  fullName: this.firstName + ' ' + this.lastName,
+                  email: this.email,
+                  bio: this.bio,
+                  role: this.role
+                };
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                this.showNotification('Perfil actualizado exitosamente', 'success');
+                
+                if (typeof updateUserInfo === 'function') {
+                  updateUserInfo();
+                }
+                
+                setTimeout(() => {
+                  this.profileSuccess = false;
+                  window.location.reload();
+                }, 2000);
+              } else if (response.status === 401) {
+                this.profileError = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+                this.showNotification('Sesión expirada. Redirigiendo al login...', 'error');
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('userInfo');
+                setTimeout(() => {
+                  window.location.href = '/signin.html';
+                }, 2000);
+              } else {
+                const errorText = await response.text();
+                console.log('Error response:', errorText);
+                let errorMessage = 'Error al actualizar el perfil.';
+                
+                try {
+                  const data = JSON.parse(errorText);
+                  errorMessage = data.error || data.message || errorMessage;
+                } catch (e) {
+                  if (errorText) {
+                    errorMessage = errorText;
+                  }
+                }
+                
+                this.profileError = errorMessage;
+                this.showNotification('Error al actualizar el perfil', 'error');
+              }
+            } catch (error) {
+              console.error('Error actualizando perfil:', error);
+              console.error('Error details:', error.message);
+              if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                this.profileError = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
+                this.showNotification('Error de conexión', 'error');
+              } else {
+                this.profileError = 'Error de conexión. Verifica tu conexión a internet.';
+                this.showNotification('Error de conexión', 'error');
+              }
+            }
+          },
+          
+          getRoleLabel() {
+            const roles = {
+              'USER': 'Usuario',
+              'ADVISOR': 'Asesor Financiero',
+              'ADMIN': 'Administrador'
+            };
+            return roles[this.role] || 'Usuario';
+          },
+          
+          clearProfileMessages() {
+            this.profileError = '';
+            this.profileSuccess = false;
           },
           
           async changePassword() {
@@ -188,6 +399,110 @@
 
           <!-- Content -->
           <div class="p-4 mx-auto max-w-2xl md:p-6">
+            <!-- Profile Information Section -->
+            <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Profile Information</h3>
+                <span 
+                  class="px-3 py-1 text-xs font-medium rounded-full"
+                  :class="{
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': role === 'USER',
+                    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': role === 'ADVISOR',
+                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': role === 'ADMIN'
+                  }"
+                  x-text="getRoleLabel()"
+                ></span>
+              </div>
+              
+              <form @submit.prevent="updateProfile" class="space-y-4">
+                <!-- Personal Information -->
+                <div class="space-y-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        First Name <span class="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        x-model="firstName" 
+                        required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        placeholder="Enter your first name"
+                        @input="clearProfileMessages()"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Last Name <span class="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        x-model="lastName" 
+                        required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        placeholder="Enter your last name"
+                        @input="clearProfileMessages()"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="email" 
+                      x-model="email" 
+                      required 
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter your email"
+                      @input="clearProfileMessages()"
+                    />
+                  </div>
+                  
+                  <!-- Biography Section -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Biography / Description
+                    </label>
+                    <textarea 
+                      x-model="bio" 
+                      rows="4"
+                      maxlength="500"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                      placeholder="Tell us a little about yourself... (optional, max 500 characters)"
+                      @input="clearProfileMessages()"
+                    ></textarea>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="`${bio.length}/500 characters`"></p>
+                  </div>
+                </div>
+                
+                <template x-if="profileError">
+                  <div class="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800" x-text="profileError"></div>
+                </template>
+                <template x-if="profileSuccess">
+                  <div class="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                    <div class="flex items-center">
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <span>Profile updated successfully!</span>
+                    </div>
+                  </div>
+                </template>
+                
+                <div class="flex justify-end pt-2">
+                  <button 
+                    type="submit" 
+                    class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Change Password Section -->
             <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Change password</h3>
               <form @submit.prevent="changePassword" class="space-y-4">
