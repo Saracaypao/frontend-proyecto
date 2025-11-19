@@ -54,7 +54,7 @@
               <h3
                 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7"
               >
-                Profile
+                Profile Information
               </h3>
 
               <!-- ===== RESUMEN DE PERFIL (NOMBRE / ROL / EMAIL) ===== -->
@@ -426,20 +426,30 @@
           }
         },
 
-        showNotification(message, type = 'info') {
-          const notification = document.createElement('div');
-          notification.className =
-            'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ' +
-            (type === 'success'
-              ? 'bg-green-500 text-white'
-              : type === 'error'
-              ? 'bg-red-500 text-white'
-              : 'bg-blue-500 text-white');
-          notification.textContent = message;
-          document.body.appendChild(notification);
-          setTimeout(() => notification.remove(), 3000);
-        },
+      showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
 
+        notification.className =
+          'p-4 rounded-lg shadow-lg transition-opacity duration-300';
+
+        notification.style.position = "fixed";
+        notification.style.top = "20px";
+        notification.style.right = "20px";
+        notification.style.zIndex = "99999";
+
+        notification.style.background =
+          type === "success" ? "#16a34a" :
+          type === "error"   ? "#dc2626" :
+                              "#2563eb";
+
+        notification.style.color = "white";
+
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => notification.remove(), 3000);
+      },
         getRoleLabel() {
           const roles = {
             USER: 'Usuario',
