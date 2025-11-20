@@ -1,10 +1,11 @@
 let sortState = {
-  field: 'date',
+  field: 'type',
   direction: 'asc'
 };
 
 let allTransactions = [];
 let currentPageSize = 5;
+let sortingInitialized = false;
 
 window.renderTransactionTable = renderTransactionTable;
 
@@ -326,20 +327,29 @@ function sortTransactions(transactions, field, direction) {
 function applySorting() {
   if (allTransactions.length === 0) return;
   
+  console.log('🔄 Aplicando sorting:', sortState);
   const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
-  
   const currentPage = window.currentTransactionPage || 1;
   window.renderTransactionTable(sortedData, currentPage, currentPageSize);
 }
-
 function initializeSortingControls() {
   const sortFieldSelect = document.getElementById('sort-field');
   const sortDirectionBtn = document.getElementById('sort-direction');
   
-  if (!sortFieldSelect || !sortDirectionBtn) return;
+  if (!sortFieldSelect || !sortDirectionBtn) {
+    console.log('⚠️ Controles de sorting no encontrados, reintentando...');
+    // Reintentar después de un delay si Alpine.js aún no ha renderizado
+    setTimeout(initializeSortingControls, 100);
+    return;
+  }
   
+  console.log('🎛️ Controles encontrados, configurando...');
+  
+  // FORZAR valores iniciales en la UI
   sortFieldSelect.value = sortState.field;
+  updateSortDirectionButton();
   
+  // Configurar event listeners
   sortFieldSelect.addEventListener('change', (e) => {
     sortState.field = e.target.value;
     applySorting();
@@ -347,19 +357,26 @@ function initializeSortingControls() {
   
   sortDirectionBtn.addEventListener('click', () => {
     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-    
-    if (sortState.direction === 'asc') {
-      sortDirectionBtn.textContent = '↑ Ascendant';
-      sortDirectionBtn.classList.remove('bg-gray-600');
-      sortDirectionBtn.classList.add('bg-blue-500');
-    } else {
-      sortDirectionBtn.textContent = '↓ Descendant';
-      sortDirectionBtn.classList.remove('bg-blue-500');
-      sortDirectionBtn.classList.add('bg-gray-600');
-    }
-    
+    updateSortDirectionButton();
     applySorting();
   });
+  
+  console.log('✅ Controles de sorting configurados');
+}
+
+function updateSortDirectionButton() {
+  const sortDirectionBtn = document.getElementById('sort-direction');
+  if (!sortDirectionBtn) return;
+  
+  if (sortState.direction === 'asc') {
+    sortDirectionBtn.textContent = '↑ Ascendente';
+    sortDirectionBtn.classList.remove('bg-gray-600', 'text-gray-300');
+    sortDirectionBtn.classList.add('bg-blue-500', 'text-white');
+  } else {
+    sortDirectionBtn.textContent = '↓ Descendente';
+    sortDirectionBtn.classList.remove('bg-blue-500', 'text-white');
+    sortDirectionBtn.classList.add('bg-gray-600', 'text-gray-300');
+  }
 }
 // ========== FIN SORTING FUNCTIONS ==========
 
@@ -368,21 +385,37 @@ function setupSortingWrapper() {
   const originalRender = window.renderTransactionTable;
   
   window.renderTransactionTable = function(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
-    // AGREGAR: Guardar datos para ordenamiento
+    console.log('🔍 renderTransactionTable - sortingInitialized:', sortingInitialized);
+    
     allTransactions = [...data];
     currentPageSize = pageSize;
     
-    // AGREGAR: Aplicar ordenamiento
-    const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-    
-    // Llamar función original SIN MODIFICAR
-    return originalRender(sortedData, page, pageSize, onEdit, onDelete);
+    // SI los controles ya están inicializados, aplicar sorting normal
+    if (sortingInitialized) {
+      const sortedData = sortTransactions(data, sortState.field, sortState.direction);
+      return originalRender(sortedData, page, pageSize, onEdit, onDelete);
+    } 
+    // SINO, forzar el ordenamiento inicial
+    else {
+      console.log('🚨 Sorting no inicializado - forzando:', sortState);
+      const sortedData = sortTransactions(data, sortState.field, sortState.direction);
+      return originalRender(sortedData, page, pageSize, onEdit, onDelete);
+    }
   };
 }
 
 // Inicializar cuando esté listo
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 DOM cargado - Iniciando controles...');
+  
+  // Primero: setup del wrapper
   setupSortingWrapper();
+  
+  // Segundo: inicializar controles de UI
   initializeSortingControls();
+  
+  // Tercero: marcar como inicializado
+  sortingInitialized = true;
+  console.log('✅ Sorting inicializado completamente');
 });
 // ========== FIN SORTING WRAPPER ==========
