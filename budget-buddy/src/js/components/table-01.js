@@ -1,14 +1,42 @@
 let sortState = {
-  field: 'type',
+  field: 'date',
   direction: 'asc'
 };
 
 let allTransactions = [];
 let currentPageSize = 5;
-let sortingInitialized = false;
+
+// ========== LOCALSTORAGE SERVICE (NUEVO) ==========
+const StorageService = {
+  SORT_PREFERENCE_KEY: 'transactionSortPreference',
+  
+  saveSortPreference(field, direction) {
+    const preference = {
+      field,
+      direction,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(this.SORT_PREFERENCE_KEY, JSON.stringify(preference));
+  },
+
+  getSortPreference() {
+    const preference = localStorage.getItem(this.SORT_PREFERENCE_KEY);
+    return preference ? JSON.parse(preference) : null;
+  },
+
+  resetSortPreference() {
+    localStorage.removeItem(this.SORT_PREFERENCE_KEY);
+  },
+
+  hasSortPreference() {
+    return localStorage.getItem(this.SORT_PREFERENCE_KEY) !== null;
+  }
+};
+// ========== FIN LOCALSTORAGE SERVICE ==========
+
+const originalRenderTransactionTable = renderTransactionTable;
 
 window.renderTransactionTable = renderTransactionTable;
-
 
 function generateTransactionRow(tx, index) {
   const typeClass =
@@ -327,7 +355,6 @@ function sortTransactions(transactions, field, direction) {
 function applySorting() {
   if (allTransactions.length === 0) return;
   
-  console.log('🔄 Aplicando sorting:', sortState);
   const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
   const currentPage = window.currentTransactionPage || 1;
   window.renderTransactionTable(sortedData, currentPage, currentPageSize);
@@ -335,33 +362,54 @@ function applySorting() {
 function initializeSortingControls() {
   const sortFieldSelect = document.getElementById('sort-field');
   const sortDirectionBtn = document.getElementById('sort-direction');
+  const resetSortBtn = document.getElementById('reset-sort');
   
-  if (!sortFieldSelect || !sortDirectionBtn) {
-    console.log('⚠️ Controles de sorting no encontrados, reintentando...');
-    // Reintentar después de un delay si Alpine.js aún no ha renderizado
-    setTimeout(initializeSortingControls, 100);
-    return;
+  if (!sortFieldSelect || !sortDirectionBtn) return;
+
+  // ========== CARGAR PREFERENCIAS GUARDADAS (NUEVO) ==========
+  const savedPreference = StorageService.getSortPreference();
+  if (savedPreference) {
+    sortState.field = savedPreference.field;
+    sortState.direction = savedPreference.direction;
   }
+  // ========== FIN CARGAR PREFERENCIAS ==========
   
-  console.log('🎛️ Controles encontrados, configurando...');
-  
-  // FORZAR valores iniciales en la UI
   sortFieldSelect.value = sortState.field;
   updateSortDirectionButton();
   
-  // Configurar event listeners
   sortFieldSelect.addEventListener('change', (e) => {
     sortState.field = e.target.value;
+    
+    StorageService.saveSortPreference(sortState.field, sortState.direction);
+
     applySorting();
   });
   
   sortDirectionBtn.addEventListener('click', () => {
     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
     updateSortDirectionButton();
+
+    StorageService.saveSortPreference(sortState.field, sortState.direction);
+
     applySorting();
   });
-  
-  console.log('✅ Controles de sorting configurados');
+
+  // ========== BOTÓN DE RESET (NUEVO) ==========
+  if (resetSortBtn) {
+    resetSortBtn.addEventListener('click', () => {
+      sortState.field = 'date';
+      sortState.direction = 'asc';
+      
+      sortFieldSelect.value = sortState.field;
+      updateSortDirectionButton(sortDirectionBtn);
+      
+      StorageService.resetSortPreference();
+      
+      applySorting();
+    });
+  }
+  // ========== FIN BOTÓN DE RESET ==========
+
 }
 
 function updateSortDirectionButton() {
@@ -381,41 +429,27 @@ function updateSortDirectionButton() {
 // ========== FIN SORTING FUNCTIONS ==========
 
 // ========== SORTING WRAPPER (NUEVO) ==========
-function setupSortingWrapper() {
+export function setupSortingWrapper() {
   const originalRender = window.renderTransactionTable;
   
   window.renderTransactionTable = function(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
-    console.log('🔍 renderTransactionTable - sortingInitialized:', sortingInitialized);
     
     allTransactions = [...data];
     currentPageSize = pageSize;
-    
-    // SI los controles ya están inicializados, aplicar sorting normal
-    if (sortingInitialized) {
-      const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-      return originalRender(sortedData, page, pageSize, onEdit, onDelete);
-    } 
-    // SINO, forzar el ordenamiento inicial
-    else {
-      console.log('🚨 Sorting no inicializado - forzando:', sortState);
-      const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-      return originalRender(sortedData, page, pageSize, onEdit, onDelete);
-    }
+
+    const sortedData = sortTransactions(data, sortState.field, sortState.direction);
+    return originalRenderTransactionTable(sortedData, page, pageSize, onEdit, onDelete);
   };
 }
 
-// Inicializar cuando esté listo
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 DOM cargado - Iniciando controles...');
-  
-  // Primero: setup del wrapper
-  setupSortingWrapper();
-  
-  // Segundo: inicializar controles de UI
+  const savedPreference = StorageService.getSortPreference();
+  if (savedPreference) {
+    sortState.field = savedPreference.field;
+    sortState.direction = savedPreference.direction;
+    console.log('Preferencia de ordenamiento cargada:', savedPreference);
+  }
+
+  setupSortingWrapper(); 
   initializeSortingControls();
-  
-  // Tercero: marcar como inicializado
-  sortingInitialized = true;
-  console.log('✅ Sorting inicializado completamente');
 });
-// ========== FIN SORTING WRAPPER ==========
