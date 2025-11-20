@@ -295,7 +295,6 @@ export function renderRecentTransactions(transactions = []) {
   `).join('');
 }
 
-// ========== SORTING FUNCTIONS (NUEVO) ==========
 function sortTransactions(transactions, field, direction) {
   const sorted = [...transactions].sort((a, b) => {
     let aValue = a[field];
@@ -350,7 +349,7 @@ function initializeSortingControls() {
     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
     
     if (sortState.direction === 'asc') {
-      sortDirectionBtn.textContent = '↑ Ascendente';
+      sortDirectionBtn.textContent = '↑ Ascendant';
       sortDirectionBtn.classList.remove('bg-gray-600');
       sortDirectionBtn.classList.add('bg-blue-500');
     } else {
