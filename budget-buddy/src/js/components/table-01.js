@@ -6,8 +6,37 @@ let sortState = {
 let allTransactions = [];
 let currentPageSize = 5;
 
-window.renderTransactionTable = renderTransactionTable;
+// ========== LOCALSTORAGE SERVICE (NUEVO) ==========
+const StorageService = {
+  SORT_PREFERENCE_KEY: 'transactionSortPreference',
+  
+  saveSortPreference(field, direction) {
+    const preference = {
+      field,
+      direction,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(this.SORT_PREFERENCE_KEY, JSON.stringify(preference));
+  },
 
+  getSortPreference() {
+    const preference = localStorage.getItem(this.SORT_PREFERENCE_KEY);
+    return preference ? JSON.parse(preference) : null;
+  },
+
+  resetSortPreference() {
+    localStorage.removeItem(this.SORT_PREFERENCE_KEY);
+  },
+
+  hasSortPreference() {
+    return localStorage.getItem(this.SORT_PREFERENCE_KEY) !== null;
+  }
+};
+// ========== FIN LOCALSTORAGE SERVICE ==========
+
+const originalRenderTransactionTable = renderTransactionTable;
+
+window.renderTransactionTable = renderTransactionTable;
 
 function generateTransactionRow(tx, index) {
   const typeClass =
@@ -327,62 +356,100 @@ function applySorting() {
   if (allTransactions.length === 0) return;
   
   const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
-  
   const currentPage = window.currentTransactionPage || 1;
   window.renderTransactionTable(sortedData, currentPage, currentPageSize);
 }
-
 function initializeSortingControls() {
   const sortFieldSelect = document.getElementById('sort-field');
   const sortDirectionBtn = document.getElementById('sort-direction');
+  const resetSortBtn = document.getElementById('reset-sort');
   
   if (!sortFieldSelect || !sortDirectionBtn) return;
+
+  // ========== CARGAR PREFERENCIAS GUARDADAS (NUEVO) ==========
+  const savedPreference = StorageService.getSortPreference();
+  if (savedPreference) {
+    sortState.field = savedPreference.field;
+    sortState.direction = savedPreference.direction;
+  }
+  // ========== FIN CARGAR PREFERENCIAS ==========
   
   sortFieldSelect.value = sortState.field;
+  updateSortDirectionButton();
   
   sortFieldSelect.addEventListener('change', (e) => {
     sortState.field = e.target.value;
+    
+    StorageService.saveSortPreference(sortState.field, sortState.direction);
+
     applySorting();
   });
   
   sortDirectionBtn.addEventListener('click', () => {
     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-    
-    if (sortState.direction === 'asc') {
-      sortDirectionBtn.textContent = '↑ Ascendant';
-      sortDirectionBtn.classList.remove('bg-gray-600');
-      sortDirectionBtn.classList.add('bg-blue-500');
-    } else {
-      sortDirectionBtn.textContent = '↓ Descendant';
-      sortDirectionBtn.classList.remove('bg-blue-500');
-      sortDirectionBtn.classList.add('bg-gray-600');
-    }
-    
+    updateSortDirectionButton();
+
+    StorageService.saveSortPreference(sortState.field, sortState.direction);
+
     applySorting();
   });
+
+  // ========== BOTÓN DE RESET (NUEVO) ==========
+  if (resetSortBtn) {
+    resetSortBtn.addEventListener('click', () => {
+      sortState.field = 'date';
+      sortState.direction = 'asc';
+      
+      sortFieldSelect.value = sortState.field;
+      updateSortDirectionButton(sortDirectionBtn);
+      
+      StorageService.resetSortPreference();
+      
+      applySorting();
+    });
+  }
+  // ========== FIN BOTÓN DE RESET ==========
+
+}
+
+function updateSortDirectionButton() {
+  const sortDirectionBtn = document.getElementById('sort-direction');
+  if (!sortDirectionBtn) return;
+  
+  if (sortState.direction === 'asc') {
+    sortDirectionBtn.textContent = '↑ Ascendente';
+    sortDirectionBtn.classList.remove('bg-gray-600', 'text-gray-300');
+    sortDirectionBtn.classList.add('bg-blue-500', 'text-white');
+  } else {
+    sortDirectionBtn.textContent = '↓ Descendente';
+    sortDirectionBtn.classList.remove('bg-blue-500', 'text-white');
+    sortDirectionBtn.classList.add('bg-gray-600', 'text-gray-300');
+  }
 }
 // ========== FIN SORTING FUNCTIONS ==========
 
 // ========== SORTING WRAPPER (NUEVO) ==========
-function setupSortingWrapper() {
+export function setupSortingWrapper() {
   const originalRender = window.renderTransactionTable;
   
   window.renderTransactionTable = function(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
-    // AGREGAR: Guardar datos para ordenamiento
+    
     allTransactions = [...data];
     currentPageSize = pageSize;
-    
-    // AGREGAR: Aplicar ordenamiento
+
     const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-    
-    // Llamar función original SIN MODIFICAR
-    return originalRender(sortedData, page, pageSize, onEdit, onDelete);
+    return originalRenderTransactionTable(sortedData, page, pageSize, onEdit, onDelete);
   };
 }
 
-// Inicializar cuando esté listo
 document.addEventListener('DOMContentLoaded', function() {
-  setupSortingWrapper();
+  const savedPreference = StorageService.getSortPreference();
+  if (savedPreference) {
+    sortState.field = savedPreference.field;
+    sortState.direction = savedPreference.direction;
+    console.log('Preferencia de ordenamiento cargada:', savedPreference);
+  }
+
+  setupSortingWrapper(); 
   initializeSortingControls();
 });
-// ========== FIN SORTING WRAPPER ==========
