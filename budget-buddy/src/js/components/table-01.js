@@ -1,3 +1,14 @@
+let sortState = {
+  field: 'date',
+  direction: 'asc'
+};
+
+let allTransactions = [];
+let currentPageSize = 5;
+
+window.renderTransactionTable = renderTransactionTable;
+
+
 function generateTransactionRow(tx, index) {
   const typeClass =
     tx.visibility === "Private"
@@ -284,4 +295,94 @@ export function renderRecentTransactions(transactions = []) {
   `).join('');
 }
 
-window.renderTransactionTable = renderTransactionTable;
+function sortTransactions(transactions, field, direction) {
+  const sorted = [...transactions].sort((a, b) => {
+    let aValue = a[field];
+    let bValue = b[field];
+    
+    if (field === 'date') {
+      aValue = new Date(aValue);
+      bValue = new Date(bValue);
+    }
+    
+    if (field === 'amount') {
+      aValue = parseFloat(aValue.replace(/[^\d.-]/g, '')) || 0;
+      bValue = parseFloat(bValue.replace(/[^\d.-]/g, '')) || 0;
+    }
+    
+    if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+  
+  return sorted;
+}
+
+function applySorting() {
+  if (allTransactions.length === 0) return;
+  
+  const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
+  
+  const currentPage = window.currentTransactionPage || 1;
+  window.renderTransactionTable(sortedData, currentPage, currentPageSize);
+}
+
+function initializeSortingControls() {
+  const sortFieldSelect = document.getElementById('sort-field');
+  const sortDirectionBtn = document.getElementById('sort-direction');
+  
+  if (!sortFieldSelect || !sortDirectionBtn) return;
+  
+  sortFieldSelect.value = sortState.field;
+  
+  sortFieldSelect.addEventListener('change', (e) => {
+    sortState.field = e.target.value;
+    applySorting();
+  });
+  
+  sortDirectionBtn.addEventListener('click', () => {
+    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    
+    if (sortState.direction === 'asc') {
+      sortDirectionBtn.textContent = '↑ Ascendant';
+      sortDirectionBtn.classList.remove('bg-gray-600');
+      sortDirectionBtn.classList.add('bg-blue-500');
+    } else {
+      sortDirectionBtn.textContent = '↓ Descendant';
+      sortDirectionBtn.classList.remove('bg-blue-500');
+      sortDirectionBtn.classList.add('bg-gray-600');
+    }
+    
+    applySorting();
+  });
+}
+// ========== FIN SORTING FUNCTIONS ==========
+
+// ========== SORTING WRAPPER (NUEVO) ==========
+function setupSortingWrapper() {
+  const originalRender = window.renderTransactionTable;
+  
+  window.renderTransactionTable = function(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
+    // AGREGAR: Guardar datos para ordenamiento
+    allTransactions = [...data];
+    currentPageSize = pageSize;
+    
+    // AGREGAR: Aplicar ordenamiento
+    const sortedData = sortTransactions(data, sortState.field, sortState.direction);
+    
+    // Llamar función original SIN MODIFICAR
+    return originalRender(sortedData, page, pageSize, onEdit, onDelete);
+  };
+}
+
+// Inicializar cuando esté listo
+document.addEventListener('DOMContentLoaded', function() {
+  setupSortingWrapper();
+  initializeSortingControls();
+});
+// ========== FIN SORTING WRAPPER ==========
