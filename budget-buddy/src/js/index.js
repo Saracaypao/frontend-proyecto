@@ -122,6 +122,7 @@ async function initializeTransactionsPage() {
     const transactions = await transactionService.loadTransactions();
     if (transactions.length > 0) {
       window.transactions = transactions.map(t => transactionService.formatTransactionForUI(t));
+      renderTransactionTable(window.transactions, 1, 5);
     }
     
     if (typeof transactionsComponent === 'function') {

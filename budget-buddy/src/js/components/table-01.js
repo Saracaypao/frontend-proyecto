@@ -1,126 +1,52 @@
-let sortState = {
-  field: 'date',
-  direction: 'asc'
-};
-
-let allTransactions = [];
-let currentPageSize = 5;
-
-// ========== LOCALSTORAGE SERVICE (NUEVO) ==========
-const StorageService = {
-  SORT_PREFERENCE_KEY: 'transactionSortPreference',
-  
-  saveSortPreference(field, direction) {
-    const preference = {
-      field,
-      direction,
-      timestamp: new Date().getTime()
-    };
-    localStorage.setItem(this.SORT_PREFERENCE_KEY, JSON.stringify(preference));
-  },
-
-  getSortPreference() {
-    const preference = localStorage.getItem(this.SORT_PREFERENCE_KEY);
-    return preference ? JSON.parse(preference) : null;
-  },
-
-  resetSortPreference() {
-    localStorage.removeItem(this.SORT_PREFERENCE_KEY);
-  },
-
-  hasSortPreference() {
-    return localStorage.getItem(this.SORT_PREFERENCE_KEY) !== null;
-  }
-};
-// ========== FIN LOCALSTORAGE SERVICE ==========
-
-const originalRenderTransactionTable = renderTransactionTable;
-
-window.renderTransactionTable = renderTransactionTable;
-
 function generateTransactionRow(tx, index) {
   const typeClass =
     tx.visibility === "Private"
       ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
       : "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-500";
 
-  // Crear el elemento tr
-  const tr = document.createElement('tr');
-  tr.className = 'relative group';
-  tr.setAttribute('data-id', tx.id);
+  return `
+    <tr class="relative group" data-id="${tx.id}">
+      <td class="py-3">
+        <div>
+          <span class="text-gray-500 text-theme-xs dark:text-gray-400">
+            ${tx.description}
+          </span>
+        </div>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.category}</p>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.type}</p>
+      </td>
+      <td class="py-3">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.date}</p>
+      </td>
+      <td class="py-3">
+        <p class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${typeClass}">
+          ${tx.visibility}
+        </p>
+      </td>
+      <td class="py-3 flex items-center justify-between gap-2">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.amount}</p>
 
-  // Crear la celda de descripción con innerHTML
-  const descriptionTd = document.createElement('td');
-  descriptionTd.className = 'py-3';
-  
-  let descriptionContent = tx.description || '';
-  if (tx.shouldHighlight && tx.searchTerm && tx.description) {
-    const escapedTerm = escapeRegex(tx.searchTerm);
-    const regex = new RegExp(`(${escapedTerm})`, 'gi');
-    descriptionContent = tx.description.replace(regex, '<span class="highlight">$1</span>');
-  }
-  
-  descriptionTd.innerHTML = `
-    <div>
-      <span class="text-gray-500 text-theme-xs dark:text-gray-400">
-        ${descriptionContent}
-      </span>
-    </div>
+        <!-- dropdown menu-->
+        <div class="relative">
+          <button class="dropdown-toggle text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            ⋮
+          </button>
+          <div class="dropdown-menu absolute right-0 z-10 mt-2 hidden w-32 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
+            <button class="edit-btn block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
+              Edit
+            </button>
+            <button class="delete-btn block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
+              Delete
+            </button>
+          </div>
+        </div>
+      </td>
+    </tr>
   `;
-
-  // Crear las otras celdas normalmente
-  const categoryTd = document.createElement('td');
-  categoryTd.className = 'py-3';
-  categoryTd.innerHTML = `<p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.category}</p>`;
-
-  const typeTd = document.createElement('td');
-  typeTd.className = 'py-3';
-  typeTd.innerHTML = `<p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.type}</p>`;
-
-  const dateTd = document.createElement('td');
-  dateTd.className = 'py-3';
-  dateTd.innerHTML = `<p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.date}</p>`;
-
-  const visibilityTd = document.createElement('td');
-  visibilityTd.className = 'py-3';
-  visibilityTd.innerHTML = `
-    <p class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${typeClass}">
-      ${tx.visibility}
-    </p>
-  `;
-
-  const actionsTd = document.createElement('td');
-  actionsTd.className = 'py-3 flex items-center justify-between gap-2';
-  actionsTd.innerHTML = `
-    <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.amount}</p>
-    <div class="relative">
-      <button class="dropdown-toggle text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-        ⋮
-      </button>
-      <div class="dropdown-menu absolute right-0 z-10 mt-2 hidden w-32 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
-        <button class="edit-btn block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
-          Edit
-        </button>
-        <button class="delete-btn block w-full rounded-lg px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
-          Delete
-        </button>
-      </div>
-    </div>
-  `;
-
-  // Agregar todas las celdas al tr
-  tr.appendChild(descriptionTd);
-  tr.appendChild(categoryTd);
-  tr.appendChild(typeTd);
-  tr.appendChild(dateTd);
-  tr.appendChild(visibilityTd);
-  tr.appendChild(actionsTd);
-
-  return tr;
-}
-
-function escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // rendering table with transactions data
@@ -139,16 +65,8 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
   const end = start + pageSize;
   const paginated = data.slice(start, end);
 
-  // Limpiar tbody
-  tbody.innerHTML = '';
+  tbody.innerHTML = paginated.map((tx, i) => generateTransactionRow(tx, i)).join("");
 
-  // Agregar filas usando elementos DOM
-  paginated.forEach((tx, i) => {
-    const row = generateTransactionRow(tx, i);
-    tbody.appendChild(row);
-  });
-
-  // El resto del código (dropdowns, eventos) permanece igual
   tbody.querySelectorAll('.dropdown-toggle').forEach(toggle => {
     toggle.addEventListener('click', (e) => {
       e.preventDefault();
@@ -209,20 +127,20 @@ function showConfirmationDialog() {
         </div>
       </div>
     `;
-
+    
     const confirmBtn = dialog.querySelector('.confirm-btn');
     const cancelBtn = dialog.querySelector('.cancel-btn');
-
+    
     confirmBtn.addEventListener('click', () => {
       document.body.removeChild(dialog);
       resolve(true);
     });
-
+    
     cancelBtn.addEventListener('click', () => {
       document.body.removeChild(dialog);
       resolve(false);
     });
-
+    
     document.body.appendChild(dialog);
   });
 }
@@ -250,8 +168,8 @@ function renderPagination(data, totalItems, currentPage, pageSize) {
       <button data-page="${i}"
         class="px-3 py-2 rounded-lg text-theme-sm font-medium text-gray-700 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 font-medium
           ${isActive
-        ? 'text-white shadow-theme-xs dark:text-white'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'}"
+            ? 'text-white shadow-theme-xs dark:text-white' 
+            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'}"
         style="${isActive ? 'background-color: #465fff;' : ''}">
         ${i}
       </button>
@@ -292,7 +210,7 @@ export function renderRecentTransactions(transactions = []) {
   }
 
   const recentTransactions = transactions.slice(0, 5);
-
+  
   tbody.innerHTML = recentTransactions.map((tx, i) => `
     <tr class="relative group">
       <td class="py-3">
@@ -306,10 +224,11 @@ export function renderRecentTransactions(transactions = []) {
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.category}</p>
       </td>
       <td class="py-3">
-        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${tx.type === 'INCOME'
-      ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500'
-      : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500'
-    }">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-theme-xs font-medium ${
+          tx.type === 'INCOME' 
+            ? 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500'
+            : 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500'
+        }">
           ${tx.type === 'INCOME' ? 'Income' : 'Expense'}
         </span>
       </td>
@@ -317,139 +236,12 @@ export function renderRecentTransactions(transactions = []) {
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">${tx.date}</p>
       </td>
       <td class="py-3">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-    }">${tx.amount}</p>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium ${
+          tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+        }">${tx.amount}</p>
       </td>
     </tr>
   `).join('');
 }
 
-function sortTransactions(transactions, field, direction) {
-  const sorted = [...transactions].sort((a, b) => {
-    let aValue = a[field];
-    let bValue = b[field];
-    
-    if (field === 'date') {
-      aValue = new Date(aValue);
-      bValue = new Date(bValue);
-    }
-    
-    if (field === 'amount') {
-      aValue = parseFloat(aValue.replace(/[^\d.-]/g, '')) || 0;
-      bValue = parseFloat(bValue.replace(/[^\d.-]/g, '')) || 0;
-    }
-    
-    if (typeof aValue === 'string') {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-    
-    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-  
-  return sorted;
-}
-
-function applySorting() {
-  if (allTransactions.length === 0) return;
-  
-  const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
-  const currentPage = window.currentTransactionPage || 1;
-  window.renderTransactionTable(sortedData, currentPage, currentPageSize);
-}
-function initializeSortingControls() {
-  const sortFieldSelect = document.getElementById('sort-field');
-  const sortDirectionBtn = document.getElementById('sort-direction');
-  const resetSortBtn = document.getElementById('reset-sort');
-  
-  if (!sortFieldSelect || !sortDirectionBtn) return;
-
-  // ========== CARGAR PREFERENCIAS GUARDADAS (NUEVO) ==========
-  const savedPreference = StorageService.getSortPreference();
-  if (savedPreference) {
-    sortState.field = savedPreference.field;
-    sortState.direction = savedPreference.direction;
-  }
-  // ========== FIN CARGAR PREFERENCIAS ==========
-  
-  sortFieldSelect.value = sortState.field;
-  updateSortDirectionButton();
-  
-  sortFieldSelect.addEventListener('change', (e) => {
-    sortState.field = e.target.value;
-    
-    StorageService.saveSortPreference(sortState.field, sortState.direction);
-
-    applySorting();
-  });
-  
-  sortDirectionBtn.addEventListener('click', () => {
-    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-    updateSortDirectionButton();
-
-    StorageService.saveSortPreference(sortState.field, sortState.direction);
-
-    applySorting();
-  });
-
-  // ========== BOTÓN DE RESET (NUEVO) ==========
-  if (resetSortBtn) {
-    resetSortBtn.addEventListener('click', () => {
-      sortState.field = 'date';
-      sortState.direction = 'asc';
-      
-      sortFieldSelect.value = sortState.field;
-      updateSortDirectionButton(sortDirectionBtn);
-      
-      StorageService.resetSortPreference();
-      
-      applySorting();
-    });
-  }
-  // ========== FIN BOTÓN DE RESET ==========
-
-}
-
-function updateSortDirectionButton() {
-  const sortDirectionBtn = document.getElementById('sort-direction');
-  if (!sortDirectionBtn) return;
-  
-  if (sortState.direction === 'asc') {
-    sortDirectionBtn.textContent = '↑ Ascendente';
-    sortDirectionBtn.classList.remove('bg-gray-600', 'text-gray-300');
-    sortDirectionBtn.classList.add('bg-blue-500', 'text-white');
-  } else {
-    sortDirectionBtn.textContent = '↓ Descendente';
-    sortDirectionBtn.classList.remove('bg-blue-500', 'text-white');
-    sortDirectionBtn.classList.add('bg-gray-600', 'text-gray-300');
-  }
-}
-// ========== FIN SORTING FUNCTIONS ==========
-
-// ========== SORTING WRAPPER (NUEVO) ==========
-export function setupSortingWrapper() {
-  const originalRender = window.renderTransactionTable;
-  
-  window.renderTransactionTable = function(data = [], page = 1, pageSize = 5, onEdit = null, onDelete = null) {
-    
-    allTransactions = [...data];
-    currentPageSize = pageSize;
-
-    const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-    return originalRenderTransactionTable(sortedData, page, pageSize, onEdit, onDelete);
-  };
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  const savedPreference = StorageService.getSortPreference();
-  if (savedPreference) {
-    sortState.field = savedPreference.field;
-    sortState.direction = savedPreference.direction;
-    console.log('Preferencia de ordenamiento cargada:', savedPreference);
-  }
-
-  setupSortingWrapper(); 
-  initializeSortingControls();
-});
+window.renderTransactionTable = renderTransactionTable;
