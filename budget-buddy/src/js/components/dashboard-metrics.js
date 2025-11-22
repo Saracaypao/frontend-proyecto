@@ -31,6 +31,21 @@ export async function loadCurrentMonthMetrics() {
         }
       }
     }
+
+    const dailyElement = document.querySelector("#card-daily-average-expense .metric-value");
+    const weeklyElement = document.querySelector("#card-weekly-average-expense .metric-value");
+
+    if (dailyElement) {
+      const dailyData = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.DAILY_AVG_EXPENSE);
+      dailyElement.textContent = `$${dailyData.averageDailyExpense?.toFixed(2) || '0.00'}`;  
+      
+    }
+    
+
+    if (weeklyElement) {
+      const weeklyData = await apiRequest(API_CONFIG.ENDPOINTS.TRANSACTIONS.WEEKLY_AVG_EXPENSE);
+      weeklyElement.textContent = `$${weeklyData.averageWeeklyExpense?.toFixed(2) || '0.00'}`;
+    }
     
   } catch (error) {
     console.error("Error cargando métricas del mes actual:", error);
@@ -38,9 +53,13 @@ export async function loadCurrentMonthMetrics() {
     const totalIncomeElement = document.querySelector("#card-income .metric-value");
     const totalExpenseElement = document.querySelector("#card-expenses .metric-value");
     const balanceElement = document.querySelector("#card-balance .metric-value");
-    
+    const dailyElement = document.querySelector("#card-daily-average-expense .metric-value");
+    const weeklyElement = document.querySelector("#card-weekly-average-expense .metric-value");
+
     if (totalIncomeElement) totalIncomeElement.textContent = "$0.00";
     if (totalExpenseElement) totalExpenseElement.textContent = "$0.00";
     if (balanceElement) balanceElement.textContent = "$0.00";
+    if (dailyElement) dailyElement.textContent = "$0.00";
+    if (weeklyElement) weeklyElement.textContent = "$0.00";
   }
 }

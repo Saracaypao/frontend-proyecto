@@ -22,6 +22,9 @@ const API_CONFIG = {
       LATEST: '/transactions/latest',
       SUMMARY_CURRENT_MONTH: '/transactions/summary/current-month',
       SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months',
+      DAILY_AVG_EXPENSE: '/transactions/summary/daily',
+      WEEKLY_AVG_EXPENSE: '/transactions/summary/weekly',
+      SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months',
       DEFAULT_BY_CATEGORY: '/transactions/public/default-by-category',
       PUBLIC_BY_CLIENT_CATEGORY: (userId, startDate, endDate) => {
         const params = new URLSearchParams();

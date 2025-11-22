@@ -129,6 +129,9 @@ class ReportService {
       { value: 12, label: 'Diciembre' }
     ];
   }
+
+
+
 }
 
 const reportService = new ReportService();
