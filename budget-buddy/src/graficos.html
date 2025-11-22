@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="es" x-data="{ page: 'graficos', loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false }" :class="{'dark bg-gray-900': darkMode === true}">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gráficos</title>
     <link rel="stylesheet" href="./css/style.css" />
   </head>
-  <body>
+  <body 
+    data-page="graficos"
+    x-data="{ page: 'graficos', loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false, scrollTop: false }" 
+    x-init="darkMode = JSON.parse(localStorage.getItem('darkMode')) || false; $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))" 
+    :class="{'dark': darkMode === true}"
+  >
     <include src="./partials/preloader.html"></include>
     <div class="flex h-screen overflow-hidden">
       <include src="./partials/sidebar.html"></include>
-      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto bg-white dark:bg-gray-900">
         <include src="./partials/overlay.html" />
         <include src="./partials/header.html" />
-        <main>
-          <div class="p-4 md:ml-[15px] mt-4">
+        <main class="bg-white dark:bg-gray-900">
+          <div class="p-4 md:ml-[15px] mt-4 bg-white dark:bg-gray-900">
             <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2">Gráficos</h2>
             <p class="text-gray-500 dark:text-gray-400 mb-6">Transacciones públicas por categorías. Selecciona un cliente asignado y aplica un rango de fechas opcional.</p>
 
@@ -41,14 +46,13 @@
               </div>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-6">Distribución por Categorías</h3>
               <div id="advisorBarChart" class="w-full min-h-[320px]"></div>
             </div>
           </div>
         </main>
       </div>
     </div>
-
-    <script type="module" src="./js/pages/graficos.js"></script>
   </body>
   </html>
