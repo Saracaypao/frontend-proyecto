@@ -21,7 +21,9 @@ const API_CONFIG = {
       FILTER: '/transactions/filter',
       LATEST: '/transactions/latest',
       SUMMARY_CURRENT_MONTH: '/transactions/summary/current-month',
-      SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months'
+      SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months',
+      DAILY_AVG_EXPENSE: '/transactions/summary/daily',
+      WEEKLY_AVG_EXPENSE: '/transactions/summary/weekly'
     },
     CATEGORIES: {
       LIST: '/categories',
