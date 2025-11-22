@@ -25,6 +25,7 @@ import "./components/image-resize";
 
 import reportComponent from './pages/report.js';
 import financialAdviceComponent from './pages/financialAdvice.js';
+import { initGraficosPage } from './pages/graficos.js';
 
 Alpine.plugin(persist);
 window.Alpine = Alpine;
@@ -83,6 +84,9 @@ function initializePageComponents(page) {
       break;
     case 'report.html':
       initializeReportPage();
+      break;
+    case 'graficos.html':
+      initGraficosPage();
       break;
     case 'signin.html':
       loadSigninPage();
