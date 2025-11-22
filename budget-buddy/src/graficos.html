@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" x-data="{ page: 'graficos', loaded: true, darkMode: false, stickyMenu: false, sidebarToggle: false }" :class="{'dark bg-gray-900': darkMode === true}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gráficos</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <include src="./partials/preloader.html"></include>
+    <div class="flex h-screen overflow-hidden">
+      <include src="./partials/sidebar.html"></include>
+      <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+        <include src="./partials/overlay.html" />
+        <include src="./partials/header.html" />
+        <main>
+          <div class="p-4 md:ml-[15px] mt-4">
+            <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2">Gráficos</h2>
+            <p class="text-gray-500 dark:text-gray-400 mb-6">Transacciones públicas por categorías. Selecciona un cliente asignado y aplica un rango de fechas opcional.</p>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div class="col-span-1">
+                  <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Cliente asignado</label>
+                  <select id="clientSelect" class="w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-2">
+                    <option value="">-- Selecciona un cliente --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Fecha inicio</label>
+                  <input type="date" id="startDate" class="w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-2" />
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Fecha fin</label>
+                  <input type="date" id="endDate" class="w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-2" />
+                </div>
+                <div class="flex gap-2">
+                  <button id="applyBtn" class="h-10 px-4 rounded bg-blue-600 text-white hover:bg-blue-700">Aplicar</button>
+                  <button id="clearBtn" class="h-10 px-4 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600">Limpiar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <div id="advisorBarChart" class="w-full min-h-[320px]"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="./js/pages/graficos.js"></script>
+  </body>
+  </html>

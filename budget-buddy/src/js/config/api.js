@@ -21,7 +21,15 @@ const API_CONFIG = {
       FILTER: '/transactions/filter',
       LATEST: '/transactions/latest',
       SUMMARY_CURRENT_MONTH: '/transactions/summary/current-month',
-      SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months'
+      SUMMARY_LAST_6_MONTHS: '/transactions/summary/last-6-months',
+      DEFAULT_BY_CATEGORY: '/transactions/public/default-by-category',
+      PUBLIC_BY_CLIENT_CATEGORY: (userId, startDate, endDate) => {
+        const params = new URLSearchParams();
+        params.append('userId', userId);
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        return `/transactions/public/by-client-category?${params.toString()}`;
+      }
     },
     CATEGORIES: {
       LIST: '/categories',
@@ -43,12 +51,14 @@ const API_CONFIG = {
       GET_PENDING_REQUESTS: '/advice-requests/pending',
       GET_MY_REQUESTS: '/advice-requests/my-requests',
       GET_MY_ASSIGNMENTS: '/advice-requests/my-assignments',
+      GET_MY_ASSIGNED_CLIENTS: '/advice-requests/my-assigned-clients',
       ACCEPT_REQUEST: (requestId) => `/advice-requests/${requestId}/accept`,
       START_ADVICE: (requestId) => `/advice-requests/${requestId}/start`,
       COMPLETE_REQUEST: (requestId) => `/advice-requests/${requestId}/complete`,
       CANCEL_REQUEST: (requestId) => `/advice-requests/${requestId}/cancel`,
       GET_REPORT: (requestId) => `/advice-requests/${requestId}/get-report`,
-      PROVIDE_ADVICE: (requestId) => `/advice-requests/${requestId}/advice`
+      PROVIDE_ADVICE: (requestId) => `/advice-requests/${requestId}/advice`,
+      UPDATE_CATEGORY: (requestId) => `/advice-requests/${requestId}/category`
     }
   }
 };
