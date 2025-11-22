@@ -10,6 +10,9 @@
     <title>
       BudgetBuddy - Financial Advice
     </title>
+    <!-- Librería para gráficos -->
+    <!-- Alpine.js para habilitar x-data/x-init y la lógica de la página -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         window.currentPage = 'financialAdv';
     </script>
@@ -27,7 +30,20 @@
       pendingRequests: [],
       myRequests: [],
       myAssignments: [],
+      // Epica 6 Historia 5: filtros para por  usuario
+      filters: {
+        startDate: '',
+        endDate: '',
+        username: ''
+      },
+      filterTypingTimer: null,
+      categories: [],
+      selectedCategoryByRequest: {},
       selectedRequest: null,
+      //Epica 6 Historia 5: historial por usuario
+      userHistory: [],
+      loadingUserHistory: false,
+      historyError: '',
       
       showNewRequestModal: false,
       newRequest: {
@@ -49,7 +65,7 @@
       
       isUserAdvisor: false,
 
-      activeTab: 'pending', // pending, my-requests, my-assignments
+      activeTab: 'pending', // pending, my-requests, my-assignments, in-progress, completed
       
       async init() {
         const LOCAL_API = 'http://localhost:8081';
@@ -87,6 +103,10 @@
           this.activeTab = 'my-requests';
         }
         
+        if (this.isUserAdvisor) {
+          await this.loadCategories();
+        }
+
         await this.loadData();
         
         window.adviceService = {
@@ -215,7 +235,17 @@
         const LOCAL_API = 'http://localhost:8081';
         this.loadingAssignments = true;
         try {
-          const response = await fetch(`${LOCAL_API}/advice-requests/my-assignments`, {
+          // si hay filtros activos, usar endpoint de búsqueda
+          const params = new URLSearchParams();
+          if (this.filters.startDate) params.append('startDate', this.filters.startDate);
+          if (this.filters.endDate) params.append('endDate', this.filters.endDate);
+          if (this.filters.username && this.filters.username.trim()) params.append('username', this.filters.username.trim());
+
+          const url = params.toString()
+            ? `${LOCAL_API}/advice-requests/my-assignments/search?${params.toString()}`
+            : `${LOCAL_API}/advice-requests/my-assignments`;
+
+          const response = await fetch(url, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
             }
@@ -228,6 +258,10 @@
           if (response.ok) {
             const data = await response.json();
             this.myAssignments = data.map(request => this.formatRequestForUI(request));
+            // inicializar selección por solicitud según categoría actual
+            this.myAssignments.forEach(req => {
+              this.selectedCategoryByRequest[req.id] = req.categoryId || '';
+            });
           } else {
             console.error('Error cargando mis asignaciones:', response.status);
           }
@@ -235,6 +269,74 @@
           console.error('Error cargando mis asignaciones:', error);
         } finally {
           this.loadingAssignments = false;
+        }
+      },
+
+      //Epica 6 historia 3
+      //manejo de cambios de filtros con debounce para actualización dinámica
+      onFilterChange() {
+        if (this.filterTypingTimer) clearTimeout(this.filterTypingTimer);
+        this.filterTypingTimer = setTimeout(() => {
+          if (['my-assignments','in-progress','completed'].includes(this.activeTab)) {
+            this.loadMyAssignments();
+          }
+        }, 400);
+      },
+
+      clearFilters() {
+        this.filters = { startDate: '', endDate: '', username: '' };
+        if (['my-assignments','in-progress','completed'].includes(this.activeTab)) this.loadMyAssignments();
+      },
+
+      // Filtrado temporal en el cliente para 'Mis Asignaciones'
+      // Regla solicitada: cuando se escribe en el filtro de Usuario, ocultar temporalmente
+      // todas las asesorías que NO coincidan con FirstName o LastName.
+      getFilteredAssignments() {
+        const q = (this.filters.username || '').trim().toLowerCase();
+        if (!q) return this.myAssignments;
+        // Dado que en el DTO tenemos userName ('First Last'), derivamos first/last básicos
+        return this.myAssignments.filter(r => {
+          const name = (r.userName || '').trim().toLowerCase();
+          if (!name) return false;
+          const parts = name.split(/\s+/); // soporta nombres compuestos
+          const first = parts.length > 0 ? parts[0] : '';
+          const last  = parts.length > 1 ? parts[parts.length - 1] : '';
+          return (first && first.includes(q)) || (last && last.includes(q));
+        });
+      },
+
+      // Devuelve la lista a mostrar según la pestaña activa, aplicando el
+      // filtrado temporal por usuario cuando corresponde.
+      getDisplayedRequests() {
+        if (this.activeTab === 'pending') return this.pendingRequests;
+        if (this.activeTab === 'my-requests') return this.myRequests;
+        // Para pestañas relacionadas con asignaciones del asesor
+        const base = this.getFilteredAssignments();
+        if (this.activeTab === 'in-progress') {
+          return base.filter(r => r.status === 'IN_PROGRESS');
+        }
+        if (this.activeTab === 'completed') {
+          return base.filter(r => r.status === 'COMPLETED');
+        }
+        // my-assignments
+        return base;
+      },
+
+      async loadCategories() {
+        const LOCAL_API = 'http://localhost:8081';
+        try {
+          const response = await fetch(`${LOCAL_API}/categories`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
+          if (response.ok) {
+            this.categories = await response.json();
+          } else {
+            console.warn('No se pudieron cargar las categorías');
+          }
+        } catch (e) {
+          console.error('Error cargando categorías', e);
         }
       },
       
@@ -465,7 +567,13 @@
           await window.adviceService.provideAdvice(this.currentAdviceRequest, this.adviceText);
           this.showNotification('Asesoría enviada exitosamente', 'success');
           this.closeAdviceModal();
+          // Guardar el usuario seleccionado (si existe) para refrescar su historial
+          const selectedUserId = this.selectedRequest && this.selectedRequest.userId ? this.selectedRequest.userId : null;
           await this.loadData();
+          // Si hay un usuario seleccionado, refrescar su historial para ver la asesoría recién completada
+          if (selectedUserId) {
+            await this.loadUserHistory(selectedUserId);
+          }
         } catch (error) {
           console.error('Error enviando asesoría:', error);
           if (error.message.includes('401')) {
@@ -494,6 +602,8 @@
       async completeRequest(requestId) {
         const LOCAL_API = 'http://localhost:8081';
         try {
+          // Guardar el usuario seleccionado (si existe) antes de completar
+          const selectedUserId = this.selectedRequest && this.selectedRequest.userId ? this.selectedRequest.userId : null;
           const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/complete`, {
             method: 'POST',
             headers: {
@@ -504,6 +614,10 @@
           if (response.ok) {
             this.showNotification('Solicitud completada', 'success');
             await this.loadData();
+            // Refrescar historial si tenemos usuario seleccionado
+            if (selectedUserId) {
+              await this.loadUserHistory(selectedUserId);
+            }
           } else {
             this.showNotification('Error completando solicitud', 'error');
           }
@@ -563,7 +677,42 @@
       
       selectRequest(request) {
         this.selectedRequest = request;
+        // Requerimiento: ocultar la sección 'Historial de asesorías del usuario' para el rol advisor.
+        // Por lo tanto, ya no cargamos el historial aquí. Solo limpiamos estados relacionados.
+        this.userHistory = [];
+        this.historyError = '';
+
       },
+
+      async loadUserHistory(userId) {
+        const LOCAL_API = 'http://localhost:8081';
+        this.loadingUserHistory = true;
+        this.historyError = '';
+        try {
+          const resp = await fetch(`${LOCAL_API}/users/${userId}/advice-history`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            }
+          });
+          if (resp.status === 401) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = './signin.html';
+            return;
+          }
+          if (!resp.ok) {
+            const txt = await resp.text();
+            throw new Error(txt || 'Error cargando historial');
+          }
+          this.userHistory = await resp.json();
+        } catch (e) {
+          console.error('Error cargando historial:', e);
+          this.historyError = 'No se pudo cargar el historial';
+          this.userHistory = [];
+        } finally {
+          this.loadingUserHistory = false;
+        }
+      },
+
       
       formatRequestForUI(request) {
         return {
@@ -576,6 +725,8 @@
           status: request.status,
           userName: request.userName,
           advisorName: request.advisorName,
+          categoryId: request.categoryId || null,
+          categoryName: request.categoryName || 'Sin categoría',
           acceptedAt: request.acceptedAt,
           completedAt: request.completedAt,
           adviceMessage: request.adviceMessage,
@@ -587,6 +738,32 @@
           statusLabel: this.getStatusLabel(request.status),
           statusColor: this.getStatusColor(request.status)
         };
+      },
+
+      async updateRequestCategory(requestId) {
+        const LOCAL_API = 'http://localhost:8081';
+        try {
+          const body = { categoryId: this.selectedCategoryByRequest[requestId] || '' };
+          const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/category`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            },
+            body: JSON.stringify(body)
+          });
+          if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err || 'Error actualizando categoría');
+          }
+          const updated = await response.json();
+          // actualizar en la lista
+          this.myAssignments = this.myAssignments.map(r => r.id === updated.id ? this.formatRequestForUI(updated) : r);
+          this.showNotification('Categoría actualizada', 'success');
+        } catch (error) {
+          console.error('Error actualizando categoría:', error);
+          this.showNotification('No se pudo actualizar la categoría', 'error');
+        }
       },
       
       getStatusLabel(status) {
@@ -623,17 +800,35 @@
       },
       
       async isAdvisor() {
+        //  Para que al crear nuevo usario con rol advisor (asesor financiero)
+        // me muestre su dashboard correspondiente
+        //Fuente de verdad: consultar el perfil del usuario autenticado
+        // para obtener el rol actual. Si falla, hacemos fallback al token.
         try {
+          const resp = await fetch('http://localhost:8081/users/profile', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` }
+          });
+          if (resp.ok) {
+            const profile = await resp.json();
+            const isAdv = profile && profile.role === 'ADVISOR';
+            console.log('Rol (profile):', profile.role);
+            return isAdv;
+          }
+        } catch (e) {
+          console.warn('No se pudo obtener /users/profile, se usará token como fallback', e);
+        }
 
+        // Fallback: decodificar el token JWT
+        try {
           const token = localStorage.getItem('jwtToken');
           if (token) {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            console.log('Rol del usuario actual:', payload.role);
+            console.log('Rol (token):', payload.role);
             return payload.role === 'ADVISOR';
           }
           return false;
         } catch (error) {
-          console.error('Error obteniendo rol de usuario:', error);
+          console.error('Error obteniendo rol de usuario desde token:', error);
           return false;
         }
       },
@@ -717,7 +912,7 @@
                   </div>
                   <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Asignaciones</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="myAssignments.filter(r => r.status === 'ACCEPTED' || r.status === 'IN_PROGRESS').length"></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="myAssignments.length"></p>
                   </div>
                 </div>
               </div>
@@ -792,6 +987,28 @@
                         Mis Asignaciones
                         <span x-show="myAssignments.length > 0" class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full" x-text="myAssignments.length"></span>
                       </button>
+                      <button
+                        @click="activeTab = 'in-progress'; loadMyAssignments()"
+                        :class="{'border-blue-500 text-blue-600': activeTab === 'in-progress', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'in-progress'}"
+                        class="py-2 px-3 border-b-2 font-medium text-sm flex items-center space-x-2"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h10M9 21h6"></path>
+                        </svg>
+                        En progreso
+                        <span x-show="myAssignments.filter(r => r.status === 'IN_PROGRESS').length > 0" class="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full" x-text="myAssignments.filter(r => r.status === 'IN_PROGRESS').length"></span>
+                      </button>
+                      <button
+                        @click="activeTab = 'completed'; loadMyAssignments()"
+                        :class="{'border-blue-500 text-blue-600': activeTab === 'completed', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'completed'}"
+                        class="py-2 px-3 border-b-2 font-medium text-sm flex items-center space-x-2"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Completadas
+                        <span x-show="myAssignments.filter(r => r.status === 'COMPLETED').length > 0" class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full" x-text="myAssignments.filter(r => r.status === 'COMPLETED').length"></span>
+                      </button>
                     </div>
                   </template>
                   
@@ -824,10 +1041,33 @@
               <div class="lg:col-span-2">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <span x-text="activeTab === 'pending' ? 'Solicitudes Pendientes' : 
-                                 activeTab === 'my-requests' ? 'My Requests' : 
-                                 'Mis Asignaciones'"></span>
+                    <span x-text="
+                      activeTab === 'pending' ? 'Solicitudes Pendientes' :
+                      activeTab === 'my-requests' ? 'My Requests' :
+                      activeTab === 'in-progress' ? 'En progreso' :
+                      activeTab === 'completed' ? 'Completadas' :
+                      'Mis Asignaciones'
+                    "></span>
                   </h3>
+
+                  <!-- Filtros para asesor financiero en Asignaciones e hijas (En progreso, Completadas) -->
+                  <div x-show="isUserAdvisor && ['my-assignments','in-progress','completed'].includes(activeTab)" class="mb-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div>
+                      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Desde</label>
+                      <input type="date" x-model="filters.startDate" @change="onFilterChange()" class="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                    </div>
+                    <div>
+                      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hasta</label>
+                      <input type="date" x-model="filters.endDate" @change="onFilterChange()" class="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                    </div>
+                    <div class="md:col-span-2">
+                      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Usuario</label>
+                      <input type="text" placeholder="Nombre del usuario" x-model="filters.username" @input="onFilterChange()" class="w-full px-3 py-1.5 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                    </div>
+                    <div class="flex items-end">
+                      <button @click="clearFilters()" class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded w-full">Limpiar</button>
+                    </div>
+                  </div>
                   
                   <div x-show="loadingRequests || loadingAssignments" class="flex items-center justify-center py-8">
                     <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -835,9 +1075,7 @@
                   </div>
 
                   <div x-show="!(loadingRequests || loadingAssignments)" class="space-y-4">
-                    <template x-for="request in (activeTab === 'pending' ? pendingRequests : 
-                                                activeTab === 'my-requests' ? myRequests : 
-                                                myAssignments)" :key="request.id">
+                    <template x-for="request in getDisplayedRequests()" :key="request.id">
                       <div 
                         @click="selectRequest(request)"
                         :class="{'border-blue-500 bg-blue-50 dark:bg-blue-900/20': selectedRequest?.id === request.id}"
@@ -857,6 +1095,33 @@
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" 
                                   :class="request.statusColor" x-text="request.statusLabel"></span>
                             
+                            <!-- Selector de categoría para mis asignaciones y en progreso (rol asesor) -->
+                            <!-- Regla: si la solicitud está COMPLETED, ya no se puede modificar la categoría -->
+                            <div x-show="(['my-assignments','in-progress'].includes(activeTab)) && request.status !== 'COMPLETED'" class="mt-2">
+                              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Categoría</label>
+                              <div class="flex items-center gap-2">
+                                <select class="w-36 text-xs border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded"
+                                        x-model="selectedCategoryByRequest[request.id]">
+                                  <option value="">Sin categoría</option>
+                                  <template x-for="cat in categories" :key="cat.id">
+                                    <option :value="cat.id" x-text="cat.name"></option>
+                                  </template>
+                                </select>
+                                <button @click.stop="updateRequestCategory(request.id)"
+                                        class="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-900 text-white rounded">
+                                  Guardar
+                                </button>
+                              </div>
+                            </div>
+                            <!-- Vista solo lectura cuando está completada -->
+                            <div x-show="(['my-assignments','in-progress'].includes(activeTab)) && request.status === 'COMPLETED'" class="mt-2">
+                              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Categoría</label>
+                              <div class="text-xs text-gray-700 dark:text-gray-300 inline-flex items-center gap-2">
+                                <span class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700" x-text="request.categoryName || 'Sin categoría'"></span>
+                                <span class="text-[11px] text-gray-400">No editable (asesoría completada)</span>
+                              </div>
+                            </div>
+
                             <div class="mt-2 space-x-1">
                               <button x-show="activeTab === 'pending' && request.status === 'PENDING'"
                                       @click.stop="acceptRequest(request.id)"
@@ -870,19 +1135,19 @@
                                 Iniciar
                               </button>
                               
-                              <button x-show="activeTab === 'my-assignments' && request.status === 'IN_PROGRESS'"
+                              <button x-show="(['my-assignments','in-progress'].includes(activeTab)) && request.status === 'IN_PROGRESS'"
                                       @click.stop="viewReport(request.id)"
                                       class="block w-full px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded mb-1">
                                 Ver Reporte
                               </button>
                               
-                              <button x-show="activeTab === 'my-assignments' && request.status === 'IN_PROGRESS'"
+                              <button x-show="(['my-assignments','in-progress'].includes(activeTab)) && request.status === 'IN_PROGRESS'"
                                       @click.stop="provideAdvice(request.id)"
                                       class="block w-full px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded mb-1">
                                 Proporcionar Asesoría
                               </button>
                               
-                              <button x-show="activeTab === 'my-assignments' && request.status === 'IN_PROGRESS'"
+                              <button x-show="(['my-assignments','in-progress'].includes(activeTab)) && request.status === 'IN_PROGRESS'"
                                       @click.stop="completeRequest(request.id)"
                                       class="block w-full px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded">
                                 Completar
@@ -899,13 +1164,15 @@
                       </div>
                     </template>
 
-                    <div x-show="(activeTab === 'pending' ? pendingRequests.length === 0 : 
-                                  activeTab === 'my-requests' ? myRequests.length === 0 : 
-                                  myAssignments.length === 0)" class="text-center py-8">
+                    <div x-show="getDisplayedRequests().length === 0" class="text-center py-8">
                       <p class="text-gray-500 dark:text-gray-400">
-                        <span x-text="activeTab === 'pending' ? 'No hay solicitudes pendientes' : 
-                                     activeTab === 'my-requests' ? 'No tienes solicitudes' : 
-                                     'No tienes asignaciones'"></span>
+                        <span x-text="
+                          activeTab === 'pending' ? 'No hay solicitudes pendientes' :
+                          activeTab === 'my-requests' ? 'No tienes solicitudes' :
+                          activeTab === 'in-progress' ? 'No hay asesorías en progreso' :
+                          activeTab === 'completed' ? 'No hay asesorías completadas' :
+                          'No tienes asignaciones'
+                        "></span>
                       </p>
                     </div>
                   </div>
@@ -956,9 +1223,13 @@
                         <span class="font-medium text-gray-700 dark:text-gray-300">Completada:</span>
                         <span class="text-gray-600 dark:text-gray-400" x-text="selectedRequest?.formattedCompletedAt"></span>
                       </div>
-                      <div x-show="selectedRequest?.adviceMessage">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">Asesoría proporcionada:</span>
-                        <span class="text-gray-600 dark:text-gray-400" x-text="selectedRequest?.formattedAdviceProvidedAt"></span>
+                      <div x-show="selectedRequest?.adviceMessage && selectedRequest?.adviceMessage.trim().length > 0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-gray-700 dark:text-gray-300">Retroalimentación del asesor</span>
+                          <span class="text-xs text-gray-500 dark:text-gray-400" x-show="selectedRequest?.formattedAdviceProvidedAt">
+                            (en <span x-text="selectedRequest?.formattedAdviceProvidedAt"></span>)
+                          </span>
+                        </div>
                         <div class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                           <p class="text-sm text-gray-800 dark:text-gray-200" x-text="selectedRequest?.adviceMessage"></p>
                         </div>
@@ -970,6 +1241,7 @@
                     <p class="text-gray-500 dark:text-gray-400">Select a request to view details</p>
                   </div>
                 </div>
+
               </div>
 
             </div>

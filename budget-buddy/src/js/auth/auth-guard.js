@@ -6,6 +6,7 @@ const PROTECTED_PAGES = [
   'report.html',
   'profile.html',
   'financialAdv.html',
+  'graficos.html',
   'settings.html'
 ];
 
@@ -16,6 +17,24 @@ const PUBLIC_PAGES = [
 ];
 
 let isRedirecting = false;
+
+function getRoleFromStorageOrToken() {
+  try {
+    const userInfoRaw = localStorage.getItem('userInfo');
+    if (userInfoRaw) {
+      const userInfo = JSON.parse(userInfoRaw);
+      if (userInfo && userInfo.role) return userInfo.role;
+    }
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role || null;
+    }
+  } catch (e) {
+    console.warn('No se pudo determinar el rol desde storage/token', e);
+  }
+  return null;
+}
 
 function isProtectedPage() {
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -37,10 +56,11 @@ function handleAuthRedirect() {
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   
   if (authenticated) {
-    
     if (isPublicPage()) {
       isRedirecting = true;
-      window.location.href = '/index.html';
+      const role = getRoleFromStorageOrToken();
+      const target = role === 'ADVISOR' ? '/financialAdv.html' : '/index.html';
+      window.location.href = target;
     }
   } else {
     

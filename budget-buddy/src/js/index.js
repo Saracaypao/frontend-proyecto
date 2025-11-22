@@ -25,6 +25,7 @@ import "./components/image-resize";
 
 import reportComponent from './pages/report.js';
 import financialAdviceComponent from './pages/financialAdvice.js';
+import { initGraficosPage } from './pages/graficos.js';
 
 Alpine.plugin(persist);
 window.Alpine = Alpine;
@@ -84,6 +85,9 @@ function initializePageComponents(page) {
     case 'report.html':
       initializeReportPage();
       break;
+    case 'graficos.html':
+      initGraficosPage();
+      break;
     case 'signin.html':
       loadSigninPage();
       break;
@@ -122,6 +126,7 @@ async function initializeTransactionsPage() {
     const transactions = await transactionService.loadTransactions();
     if (transactions.length > 0) {
       window.transactions = transactions.map(t => transactionService.formatTransactionForUI(t));
+      renderTransactionTable(window.transactions, 1, 5);
     }
     
     if (typeof transactionsComponent === 'function') {
