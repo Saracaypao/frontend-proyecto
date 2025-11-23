@@ -1,7 +1,4 @@
 # � Budget Buddy - Personal Finance Manager
-
-<div align="center">
-  <img src="src/images/logo/logo.svg" alt="Budget Buddy Logo" width="200"/>
   
   [![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
@@ -9,7 +6,7 @@
   [![Tailwind CSS](https://img.shields.io/badge/tailwind-4.0.0-38bdf8.svg)](https://tailwindcss.com/)
 </div>
 
-## 📚 Documentación
+## Documentación
 
 Esta es la documentación principal. Para información más específica, consulta:
 
@@ -779,3 +776,4 @@ Este proyecto está bajo la licencia ISC. Ver el archivo LICENSE para más detal
   <p>Hecho con ❤ por el equipo de Budget Buddy</p>
   <p> 2025 Budget Buddy. Todos los derechos reservados.</p>
 </div>
+
