@@ -6,9 +6,10 @@ let sortState = {
 let allTransactions = [];
 let currentPageSize = 5;
 
-// ========== LOCALSTORAGE SERVICE (NUEVO) ==========
+// ========== LOCALSTORAGE SERVICE ==========
 const StorageService = {
   SORT_PREFERENCE_KEY: 'transactionSortPreference',
+  TRANSACTIONS_KEY: 'transactionsData',
   
   saveSortPreference(field, direction) {
     const preference = {
@@ -30,14 +31,136 @@ const StorageService = {
 
   hasSortPreference() {
     return localStorage.getItem(this.SORT_PREFERENCE_KEY) !== null;
+  },
+
+  // Funciones para manejar las transacciones en localStorage
+  saveTransactions(transactions) {
+    localStorage.setItem(this.TRANSACTIONS_KEY, JSON.stringify(transactions));
+  },
+
+  getTransactions() {
+    const transactions = localStorage.getItem(this.TRANSACTIONS_KEY);
+    return transactions ? JSON.parse(transactions) : [];
+  },
+
+  deleteTransaction(transactionId) {
+    const transactions = this.getTransactions();
+    const filteredTransactions = transactions.filter(tx => tx.id !== transactionId);
+    this.saveTransactions(filteredTransactions);
+    return filteredTransactions;
+  },
+
+  updateTransaction(updatedTransaction) {
+    const transactions = this.getTransactions();
+    const updatedTransactions = transactions.map(tx => 
+      tx.id === updatedTransaction.id ? updatedTransaction : tx
+    );
+    this.saveTransactions(updatedTransactions);
+    return updatedTransactions;
   }
 };
-// ========== FIN LOCALSTORAGE SERVICE ==========
 
-const originalRenderTransactionTable = renderTransactionTable;
+// ========== FUNCIONES DE MANEJO DE TRANSACCIONES ==========
+function handleDeleteTransaction(transactionToDelete) {
+  console.log('Eliminando transacción:', transactionToDelete);
+  
+  try {
+    // 1. Eliminar del localStorage
+    const updatedTransactions = StorageService.deleteTransaction(transactionToDelete.id);
+    
+    // 2. Actualizar allTransactions
+    allTransactions = updatedTransactions;
+    
+    // 3. Re-renderizar la tabla
+    const currentPage = window.currentTransactionPage || 1;
+    const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
+    window.renderTransactionTable(sortedData, currentPage, currentPageSize);
+    
+    // 4. Actualizar transacciones recientes
+    renderRecentTransactions(allTransactions);
+    
+    // 5. Mostrar notificación de éxito
+    showNotification('Transacción eliminada correctamente', 'success');
+    
+  } catch (error) {
+    console.error('Error al eliminar transacción:', error);
+    showNotification('Error al eliminar la transacción', 'error');
+  }
+}
 
-window.renderTransactionTable = renderTransactionTable;
+function handleEditTransaction(transactionToEdit) {
+  console.log('Editando transacción:', transactionToEdit);
+  
+  // Aquí puedes implementar un modal de edición o un formulario
+  // Por ahora, mostraremos un prompt simple para demostración
+  const newDescription = prompt('Editar descripción:', transactionToEdit.description);
+  
+  if (newDescription !== null && newDescription.trim() !== '') {
+    try {
+      // 1. Actualizar la transacción
+      const updatedTransaction = {
+        ...transactionToEdit,
+        description: newDescription.trim()
+      };
+      
+      // 2. Guardar en localStorage
+      const updatedTransactions = StorageService.updateTransaction(updatedTransaction);
+      
+      // 3. Actualizar allTransactions
+      allTransactions = updatedTransactions;
+      
+      // 4. Re-renderizar la tabla
+      const currentPage = window.currentTransactionPage || 1;
+      const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
+      window.renderTransactionTable(sortedData, currentPage, currentPageSize);
+      
+      // 5. Mostrar notificación
+      showNotification('Transacción actualizada correctamente', 'success');
+      
+    } catch (error) {
+      console.error('Error al editar transacción:', error);
+      showNotification('Error al editar la transacción', 'error');
+    }
+  }
+}
 
+function showNotification(message, type = 'info') {
+  // Crear elemento de notificación
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${
+    type === 'success' 
+      ? 'bg-green-500 text-white' 
+      : type === 'error' 
+      ? 'bg-red-500 text-white' 
+      : 'bg-blue-500 text-white'
+  }`;
+  
+  notification.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span>${message}</span>
+      <button class="close-notification text-lg font-bold">&times;</button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remover después de 3 segundos
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.parentNode.removeChild(notification), 300);
+    }
+  }, 3000);
+  
+  // Botón para cerrar manualmente
+  notification.querySelector('.close-notification').addEventListener('click', () => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  });
+}
+
+// ========== FUNCIONES DE RENDERIZADO ==========
 function generateTransactionRow(tx, index) {
   const typeClass =
     tx.visibility === "Private"
@@ -168,7 +291,9 @@ export function renderTransactionTable(data = [], page = 1, pageSize = 5, onEdit
       const row = e.target.closest("tr");
       const id = row.dataset.id;
       const transaction = data.find(tx => tx.id === id);
-      if (onEdit && transaction) onEdit(transaction);
+      if (onEdit && transaction) {
+        onEdit(transaction);
+      }
     });
   });
 
@@ -213,14 +338,26 @@ function showConfirmationDialog() {
     const confirmBtn = dialog.querySelector('.confirm-btn');
     const cancelBtn = dialog.querySelector('.cancel-btn');
 
-    confirmBtn.addEventListener('click', () => {
+    const cleanup = () => {
       document.body.removeChild(dialog);
+    };
+
+    confirmBtn.addEventListener('click', () => {
+      cleanup();
       resolve(true);
     });
 
     cancelBtn.addEventListener('click', () => {
-      document.body.removeChild(dialog);
+      cleanup();
       resolve(false);
+    });
+
+    // Cerrar al hacer clic fuera del diálogo
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        cleanup();
+        resolve(false);
+      }
     });
 
     document.body.appendChild(dialog);
@@ -271,7 +408,8 @@ function renderPagination(data, totalItems, currentPage, pageSize) {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       const page = Number(e.target.dataset.page);
-      renderTransactionTable(data, page, pageSize);
+      const sortedData = sortTransactions(allTransactions, sortState.field, sortState.direction);
+      window.renderTransactionTable(sortedData, page, pageSize);
     });
   });
 }
@@ -324,6 +462,7 @@ export function renderRecentTransactions(transactions = []) {
   `).join('');
 }
 
+// ========== SORTING FUNCTIONS ==========
 function sortTransactions(transactions, field, direction) {
   const sorted = [...transactions].sort((a, b) => {
     let aValue = a[field];
@@ -359,6 +498,7 @@ function applySorting() {
   const currentPage = window.currentTransactionPage || 1;
   window.renderTransactionTable(sortedData, currentPage, currentPageSize);
 }
+
 function initializeSortingControls() {
   const sortFieldSelect = document.getElementById('sort-field');
   const sortDirectionBtn = document.getElementById('sort-direction');
@@ -366,50 +506,41 @@ function initializeSortingControls() {
   
   if (!sortFieldSelect || !sortDirectionBtn) return;
 
-  // ========== CARGAR PREFERENCIAS GUARDADAS (NUEVO) ==========
+  // Cargar preferencias guardadas
   const savedPreference = StorageService.getSortPreference();
   if (savedPreference) {
     sortState.field = savedPreference.field;
     sortState.direction = savedPreference.direction;
   }
-  // ========== FIN CARGAR PREFERENCIAS ==========
   
   sortFieldSelect.value = sortState.field;
   updateSortDirectionButton();
   
   sortFieldSelect.addEventListener('change', (e) => {
     sortState.field = e.target.value;
-    
     StorageService.saveSortPreference(sortState.field, sortState.direction);
-
     applySorting();
   });
   
   sortDirectionBtn.addEventListener('click', () => {
     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
     updateSortDirectionButton();
-
     StorageService.saveSortPreference(sortState.field, sortState.direction);
-
     applySorting();
   });
 
-  // ========== BOTÓN DE RESET (NUEVO) ==========
   if (resetSortBtn) {
     resetSortBtn.addEventListener('click', () => {
       sortState.field = 'date';
       sortState.direction = 'asc';
       
       sortFieldSelect.value = sortState.field;
-      updateSortDirectionButton(sortDirectionBtn);
+      updateSortDirectionButton();
       
       StorageService.resetSortPreference();
-      
       applySorting();
     });
   }
-  // ========== FIN BOTÓN DE RESET ==========
-
 }
 
 function updateSortDirectionButton() {
@@ -426,9 +557,8 @@ function updateSortDirectionButton() {
     sortDirectionBtn.classList.add('bg-gray-600', 'text-gray-300');
   }
 }
-// ========== FIN SORTING FUNCTIONS ==========
 
-// ========== SORTING WRAPPER (NUEVO) ==========
+// ========== SETUP WRAPPER ==========
 export function setupSortingWrapper() {
   const originalRender = window.renderTransactionTable;
   
@@ -438,18 +568,40 @@ export function setupSortingWrapper() {
     currentPageSize = pageSize;
 
     const sortedData = sortTransactions(data, sortState.field, sortState.direction);
-    return originalRenderTransactionTable(sortedData, page, pageSize, onEdit, onDelete);
+    
+    // Usar los callbacks proporcionados O los defaults
+    const editCallback = onEdit || handleEditTransaction;
+    const deleteCallback = onDelete || handleDeleteTransaction;
+    
+    return originalRender(sortedData, page, pageSize, editCallback, deleteCallback);
   };
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  const savedPreference = StorageService.getSortPreference();
-  if (savedPreference) {
-    sortState.field = savedPreference.field;
-    sortState.direction = savedPreference.direction;
-    console.log('Preferencia de ordenamiento cargada:', savedPreference);
-  }
-
-  setupSortingWrapper(); 
+// ========== INICIALIZACIÓN ==========
+export function initializeTransactions() {
+  // Cargar transacciones del localStorage
+  const transactions = StorageService.getTransactions();
+  allTransactions = transactions;
+  
+  // Configurar sorting
+  setupSortingWrapper();
   initializeSortingControls();
+  
+  // Renderizar tabla inicial
+  if (transactions.length > 0) {
+    window.renderTransactionTable(transactions, 1, currentPageSize);
+  }
+  
+  // Renderizar transacciones recientes
+  renderRecentTransactions(transactions);
+  
+  console.log('Sistema de transacciones inicializado con', transactions.length, 'transacciones');
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+  initializeTransactions();
 });
+
+// Mantener la referencia global
+window.renderTransactionTable = renderTransactionTable;
