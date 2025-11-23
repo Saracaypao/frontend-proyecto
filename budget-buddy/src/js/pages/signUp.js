@@ -148,42 +148,6 @@ root.innerHTML = `
           <p id="passwordMatchError" class="mt-1 text-sm text-red-600 hidden">Passwords do not match</p>
         </div>
         
-        <!-- role -->
-        <div>
-          <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-400">
-            Account Type <span class="text-red-500">*</span>
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="relative cursor-pointer">
-              <input
-                type="radio"
-                name="role"
-                value="USER"
-                checked
-                class="sr-only peer"
-              />
-              <div class="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-center transition-colors hover:border-blue-400 dark:hover:border-blue-400 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500">
-                <div class="text-sm mb-0.5">👤</div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">User</div>
-                <div class="text-[0.65rem] text-gray-500 dark:text-gray-400 leading-tight">Personal finances</div>
-              </div>
-            </label>
-            <label class="relative cursor-pointer">
-              <input
-                type="radio"
-                name="role"
-                value="ADVISOR"
-                class="sr-only peer"
-              />
-              <div class="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-center transition-colors hover:border-blue-400 dark:hover:border-blue-400 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500">
-                <div class="text-sm mb-0.5">🎓</div>
-                <div class="text-sm font-medium text-gray-900 dark:text-white">Advisor</div>
-                <div class="text-[0.65rem] text-gray-500 dark:text-gray-400 leading-tight">Give financial advice</div>
-              </div>
-            </label>
-          </div>
-        </div>
-        
         <!-- submit button -->
         <div>
           <button 
