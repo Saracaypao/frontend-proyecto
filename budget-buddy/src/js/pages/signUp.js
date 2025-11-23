@@ -7,7 +7,7 @@ export default function loadSignupPage() {
 
   let showPassword = false;
 
-root.innerHTML = `
+  root.innerHTML = `
 <div class="flex flex-col md:flex-row w-full h-screen overflow-hidden">
   <!-- left column with Sign Up form -->
   <div class="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4 overflow-y-auto pt-6">
@@ -147,7 +147,7 @@ root.innerHTML = `
           </div>
           <p id="passwordMatchError" class="mt-1 text-sm text-red-600 hidden">Passwords do not match</p>
         </div>
-        
+
         <!-- submit button -->
         <div>
           <button 
@@ -230,30 +230,8 @@ root.innerHTML = `
       close.classList.toggle("hidden");
     });
   };
-  toggle("togglePassword",        "password",         "eyeOpenIcon",        "eyeCloseIcon");
-  toggle("toggleConfirmPassword", "confirmPassword",  "eyeOpenIconConfirm", "eyeCloseIconConfirm");
-
-  const roleInputs = document.querySelectorAll('input[name="role"]');
-  const roleOptions = document.querySelectorAll('.role-option');
-  
-  function updateRoleSelection() {
-    roleOptions.forEach((option, index) => {
-      const input = roleInputs[index];
-      if (input.checked) {
-        option.classList.add('border-brand-500', 'bg-brand-50', 'dark:bg-brand-900/20');
-        option.classList.remove('border-gray-300', 'dark:border-gray-600');
-      } else {
-        option.classList.remove('border-brand-500', 'bg-brand-50', 'dark:bg-brand-900/20');
-        option.classList.add('border-gray-300', 'dark:border-gray-600');
-      }
-    });
-  }
-  
-  roleInputs.forEach(input => {
-    input.addEventListener('change', updateRoleSelection);
-  });
-  
-  updateRoleSelection();
+  toggle("togglePassword",        "password",        "eyeOpenIcon",        "eyeCloseIcon");
+  toggle("toggleConfirmPassword", "confirmPassword", "eyeOpenIconConfirm", "eyeCloseIconConfirm");
 
   const passwordMatchError = document.getElementById("passwordMatchError");
   function validatePasswordMatch() {
@@ -269,62 +247,62 @@ root.innerHTML = `
   document.getElementById("password")?.addEventListener("input", validatePasswordMatch);
   document.getElementById("confirmPassword")?.addEventListener("input", validatePasswordMatch);
 
-const signupForm = document.getElementById("signup-form");
-signupForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!validatePasswordMatch()) return;
+  const signupForm = document.getElementById("signup-form");
+  signupForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!validatePasswordMatch()) return;
 
-  const payload = {
-    firstName: document.getElementById("firstName").value,
-    lastName:  document.getElementById("lastName").value,
-    email:     document.getElementById("email").value,
-    password:  document.getElementById("password").value,
-    role:      document.querySelector('input[name="role"]:checked').value,
-  };
+    const payload = {
+      firstName: document.getElementById("firstName").value,
+      lastName:  document.getElementById("lastName").value,
+      email:     document.getElementById("email").value,
+      password:  document.getElementById("password").value,
+      // Siempre se registra como USER
+      role:      "USER",
+    };
 
-  const submitBtn = signupForm.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = "Creating account...";
-  submitBtn.disabled = true;
+    const submitBtn = signupForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "Creating account...";
+    submitBtn.disabled = true;
 
-  try {
-    const response = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.REGISTER, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.REGISTER, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-    showNotification("Account created successfully! Redirecting to login...", "success");
-    
-    setTimeout(() => {
-      window.location.href = "/signin.html";
-    }, 2000);
+      showNotification("Account created successfully! Redirecting to login...", "success");
+      
+      setTimeout(() => {
+        window.location.href = "/signin.html";
+      }, 2000);
 
-  } catch (err) {
-    console.error("Error de registro:", err);
-    
-    let errorMessage = "Error al registrar usuario. Intenta nuevamente.";
-    
-    if (err.message.includes("This email is already in use") || 
-        err.message.includes("email is already in use") ||
-        err.message.includes("already in use") ||
-        err.message.includes("Este email ya está registrado") ||
-        err.message.includes("email ya está registrado")) {
-      errorMessage = "El email ya está registrado. Intenta con otro email.";
-    } else if (err.message.includes("409")) {
-      errorMessage = "El email ya está registrado. Intenta con otro email.";
-    } else if (err.message.includes("400")) {
-      errorMessage = "Datos inválidos. Verifica que todos los campos estén completos.";
-    } else if (err.message.includes("500")) {
-      errorMessage = "Error del servidor. Intenta más tarde.";
+    } catch (err) {
+      console.error("Error de registro:", err);
+      
+      let errorMessage = "Error al registrar usuario. Intenta nuevamente.";
+      
+      if (err.message.includes("This email is already in use") || 
+          err.message.includes("email is already in use") ||
+          err.message.includes("already in use") ||
+          err.message.includes("Este email ya está registrado") ||
+          err.message.includes("email ya está registrado")) {
+        errorMessage = "El email ya está registrado. Intenta con otro email.";
+      } else if (err.message.includes("409")) {
+        errorMessage = "El email ya está registrado. Intenta con otro email.";
+      } else if (err.message.includes("400")) {
+        errorMessage = "Datos inválidos. Verifica que todos los campos estén completos.";
+      } else if (err.message.includes("500")) {
+        errorMessage = "Error del servidor. Intenta más tarde.";
+      }
+      
+      showNotification(errorMessage, "error");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
-    
-    showNotification(errorMessage, "error");
-  } finally {
-
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-  }
-});
+  });
 
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');

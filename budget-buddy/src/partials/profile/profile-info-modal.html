@@ -5,6 +5,7 @@
   <div
     class="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
   ></div>
+
   <div
     @click.outside="isProfileInfoModal = false"
     class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
@@ -30,78 +31,20 @@
         />
       </svg>
     </button>
+
     <div class="px-2 pr-14">
       <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-        Edit Personal Information
+        Edit Profile Information
       </h4>
       <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
         Update your details to keep your profile up-to-date.
       </p>
     </div>
-    <form class="flex flex-col">
+
+    <!-- MISMOS CAMPOS QUE EN PROFILE -->
+    <form class="flex flex-col" @submit.prevent="updateProfile">
       <div class="custom-scrollbar h-[450px] overflow-y-auto px-2">
         <div>
-          <h5
-            class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6"
-          >
-            Social Links
-          </h5>
-
-          <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-            <div>
-              <label
-                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-              >
-                Facebook
-              </label>
-              <input
-                type="text"
-                value="https://facebook.com/PimjoHQ"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
-            </div>
-
-            <div>
-              <label
-                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-              >
-                X.com
-              </label>
-              <input
-                type="text"
-                value="https://x.com/PimjoHQ"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
-            </div>
-
-            <div>
-              <label
-                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-              >
-                Linkedin
-              </label>
-              <input
-                type="text"
-                value="https://linkedin.com/PimjoHQ"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
-            </div>
-
-            <div>
-              <label
-                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-              >
-                Instagram
-              </label>
-              <input
-                type="text"
-                value="https://instagram.com/PimjoHQ"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="mt-7">
           <h5
             class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6"
           >
@@ -109,6 +52,7 @@
           </h5>
 
           <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+            <!-- First Name -->
             <div class="col-span-2 lg:col-span-1">
               <label
                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
@@ -117,11 +61,14 @@
               </label>
               <input
                 type="text"
-                value="Musharof"
+                x-model="firstName"
+                required
                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                placeholder="Enter your first name"
               />
             </div>
 
+            <!-- Last Name -->
             <div class="col-span-2 lg:col-span-1">
               <label
                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
@@ -130,11 +77,14 @@
               </label>
               <input
                 type="text"
-                value="Chowdhury"
+                x-model="lastName"
+                required
                 class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                placeholder="Enter your last name"
               />
             </div>
 
+            <!-- Email -->
             <div class="col-span-2 lg:col-span-1">
               <label
                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
@@ -142,40 +92,51 @@
                 Email Address
               </label>
               <input
-                type="text"
-                value="randomuser@pimjo.com"
+                type="email"
+                x-model="email"
+                required
                 class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                placeholder="Enter your email"
               />
             </div>
 
+            <!-- Role (solo lectura) -->
             <div class="col-span-2 lg:col-span-1">
               <label
                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
               >
-                Phone
+                Role
               </label>
-              <input
-                type="text"
-                value="+09 363 398 46"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
+              <div
+                class="inline-flex items-center rounded-full px-3 py-2 text-xs font-semibold
+                       bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                x-text="getRoleLabel()"
+              ></div>
             </div>
 
+            <!-- Bio -->
             <div class="col-span-2">
               <label
                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
               >
                 Bio
               </label>
-              <input
-                type="text"
-                value="Team Manager"
-                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              />
+              <textarea
+                x-model="bio"
+                rows="3"
+                maxlength="500"
+                class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 resize-none"
+                placeholder="Tell us a little about yourself..."
+              ></textarea>
+              <p
+                class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                x-text="`${(bio || '').length}/500 characters`"
+              ></p>
             </div>
           </div>
         </div>
       </div>
+
       <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
         <button
           @click="isProfileInfoModal = false"
@@ -185,7 +146,7 @@
           Close
         </button>
         <button
-          type="button"
+          type="submit"
           class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
         >
           Save Changes
