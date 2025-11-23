@@ -156,7 +156,7 @@
       },
       
       async loadData() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         this.loading = true;
         try {
           const isAdvisor = await this.isAdvisor();
@@ -178,7 +178,7 @@
       },
       
       async loadPendingRequests() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         this.loadingRequests = true;
         try {
           const response = await fetch(`${LOCAL_API}/advice-requests/pending`, {
@@ -205,7 +205,7 @@
       },
       
       async loadMyRequests() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         this.loadingRequests = true;
         try {
           const response = await fetch(`${LOCAL_API}/advice-requests/my-requests`, {
@@ -232,7 +232,7 @@
       },
       
       async loadMyAssignments() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         this.loadingAssignments = true;
         try {
           // si hay filtros activos, usar endpoint de búsqueda
@@ -323,7 +323,7 @@
       },
 
       async loadCategories() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           const response = await fetch(`${LOCAL_API}/categories`, {
             headers: {
@@ -341,7 +341,7 @@
       },
       
       async createRequest() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         if (!this.newRequest.description.trim()) {
           this.showNotification('Por favor ingresa una descripción', 'error');
           return;
@@ -407,7 +407,7 @@
       },
       
       async acceptRequest(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/accept`, {
             method: 'POST',
@@ -429,7 +429,7 @@
       },
       
       async rejectRequest(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         if (!confirm('¿Estás seguro de que quieres rechazar esta solicitud?')) {
           return;
         }
@@ -455,7 +455,7 @@
       },
       
       async startAdvice(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/start`, {
             method: 'POST',
@@ -477,7 +477,7 @@
       },
       
       async completeAdvice(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/complete`, {
             method: 'POST',
@@ -499,7 +499,7 @@
       },
       
       async viewReport(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         const isAdvisor = await this.isAdvisor();
         if (!isAdvisor) {
           this.showNotification('Solo los asesores pueden ver reportes', 'error');
@@ -544,7 +544,7 @@
       },
       
       async provideAdvice(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         const isAdvisor = await this.isAdvisor();
         if (!isAdvisor) {
           this.showNotification('Solo los asesores pueden proporcionar asesoría', 'error');
@@ -557,7 +557,7 @@
       },
       
       async submitAdvice() {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         if (!this.adviceText.trim()) {
           this.showNotification('Por favor ingresa tu asesoría', 'error');
           return;
@@ -600,7 +600,7 @@
       },
       
       async completeRequest(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           // Guardar el usuario seleccionado (si existe) antes de completar
           const selectedUserId = this.selectedRequest && this.selectedRequest.userId ? this.selectedRequest.userId : null;
@@ -628,7 +628,7 @@
       },
       
       async cancelRequest(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         if (!confirm('¿Estás seguro de que quieres cancelar esta solicitud?')) {
           return;
         }
@@ -685,7 +685,7 @@
       },
 
       async loadUserHistory(userId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         this.loadingUserHistory = true;
         this.historyError = '';
         try {
@@ -741,7 +741,7 @@
       },
 
       async updateRequestCategory(requestId) {
-        const LOCAL_API = 'http://localhost:8081';
+        const LOCAL_API = 'https://backend-proyecto-28x9.onrender.com';
         try {
           const body = { categoryId: this.selectedCategoryByRequest[requestId] || '' };
           const response = await fetch(`${LOCAL_API}/advice-requests/${requestId}/category`, {
