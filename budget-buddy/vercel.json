@@ -1,28 +1,13 @@
 {
   "rewrites": [
-    {
-      "source": "/auth/:path*",
-      "destination": "https://backend-proyecto-28x9.onrender.com/auth/:path*"
-    },
-    {
-      "source": "/users/:path*",
-      "destination": "https://backend-proyecto-28x9.onrender.com/users/:path*"
-    },
-    {
-      "source": "/transactions/:path*",
-      "destination": "https://backend-proyecto-28x9.onrender.com/transactions/:path*"
-    },
-    {
-      "source": "/categories/:path*",
-      "destination": "https://backend-proyecto-28x9.onrender.com/categories/:path*"
-    },
-    {
-      "source": "/advice-requests/:path*",
-      "destination": "https://backend-proyecto-28x9.onrender.com/advice-requests/:path*"
-    },
+    {"src": "/auth/(.*)", "dest": "https://backend-proyecto-28x9.onrender.com/auth/$1" }, 
+    { "src": "/users/(.*)", "dest": "https://backend-proyecto-28x9.onrender.com/users/$1" }, 
+    { "src": "/transactions/(.*)", "dest": "https://backend-proyecto-28x9.onrender.com/transactions/$1" }, 
+    { "src": "/categories/(.*)", "dest": "https://backend-proyecto-28x9.onrender.com/categories/$1" },
 
-    { "source": "/signin", "destination": "/signin.html" },
-    { "source": "/signup", "destination": "/signup.html" },
-    { "source": "/", "destination": "/index.html" }
+   { "source": "/signin", "destination": "/signin.html" }, 
+   { "source": "/signup", "destination": "/signup.html" }, 
+   { "source": "/", "destination": "/index.html" },
+   { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
