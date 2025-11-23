@@ -1,17 +1,5 @@
 # Budget Buddy - Personal Finance Manager
 
-##  Documentación
-
-Esta es la documentación principal. Para información más específica, consulta:
-
--  **[README.md](README.md)** - Este archivo (inicio rápido)
--  **[INSTALLATION.md](INSTALLATION.md)** - Guía de instalación detallada por sistema operativo
--  **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para contribuir al proyecto
--  **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Documentación completa de la API
--  **[EXPORT_PDF_FEATURE.md](EXPORT_PDF_FEATURE.md)** - Funcionalidad de exportación PDF
--  **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Resumen de implementación
--  **[QUICK_START_PDF.md](QUICK_START_PDF.md)** - Inicio rápido para PDF
-
 ## Descripción del Proyecto
 
 **Budget Buddy** es una aplicación web moderna y completa para la gestión de finanzas personales que permite a los usuarios tomar control total de su dinero. La aplicación está diseñada tanto para personas que buscan llevar un registro detallado de sus gastos e ingresos, como para asesores financieros profesionales que necesitan ayudar a sus clientes.
@@ -675,4 +663,5 @@ Este proyecto está bajo la licencia ISC. Ver el archivo LICENSE para más detal
   <p>Hecho con ❤ por el equipo de Budget Buddy</p>
   <p> 2025 Budget Buddy. Todos los derechos reservados.</p>
 </div>
+
 
