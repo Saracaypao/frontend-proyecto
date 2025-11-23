@@ -63,7 +63,7 @@ module.exports = {
     },
     proxy: [{
       context: ['/auth', '/users', '/transactions', '/categories'],
-      target: 'http://localhost:8081',
+      target: 'https://backend-proyecto-28x9.onrender.com',
       changeOrigin: true,
       secure: false
     }],
