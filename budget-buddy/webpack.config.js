@@ -133,6 +133,7 @@ module.exports = {
     path: path.resolve(__dirname, "build"),
     clean: true,
     assetModuleFilename: "[path][name][ext]",
+    publicPath: '/',
   },
   target: "web", // fix for "browserslist" error message
   stats: "errors-only", // suppress irrelevant log messages

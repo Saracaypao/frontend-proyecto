@@ -1,8 +1,26 @@
 {
   "rewrites": [
+    { "source": "/signin", "destination": "/signin.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/auth/(.*)",
+      "dest": "https://backend-proyecto-28x9.onrender.com/auth/$1"
+    },
+    {
+      "src": "/users/(.*)",
+      "dest": "https://backend-proyecto-28x9.onrender.com/users/$1"
+    },
+    {
+      "src": "/transactions/(.*)",
+      "dest": "https://backend-proyecto-28x9.onrender.com/transactions/$1"
+    },
+    {
+      "src": "/categories/(.*)",
+      "dest": "https://backend-proyecto-28x9.onrender.com/categories/$1"
     }
   ]
 }
