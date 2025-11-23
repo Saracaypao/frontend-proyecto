@@ -1,6 +1,6 @@
 // api url
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8081',
+  BASE_URL: 'https://backend-proyecto-28x9.onrender.com',
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/auth/login',
