@@ -1,12 +1,13 @@
-# � Budget Buddy - Personal Finance Manager
-  
+# Budget Buddy - Personal Finance Manager
+
+<div align="center">
   [![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
   [![Webpack](https://img.shields.io/badge/webpack-5.99.9-blue.svg)](https://webpack.js.org/)
   [![Tailwind CSS](https://img.shields.io/badge/tailwind-4.0.0-38bdf8.svg)](https://tailwindcss.com/)
 </div>
 
-## Documentación
+##  Documentación
 
 Esta es la documentación principal. Para información más específica, consulta:
 
@@ -28,7 +29,7 @@ Esta es la documentación principal. Para información más específica, consult
 - **Asesores financieros**: Profesionales que ofrecen consultoría financiera y necesitan acceder a las transacciones públicas de sus clientes.
 - **Familias**: Grupos que quieren gestionar sus finanzas compartidas de manera colaborativa.
 
-### 🚀 ¿Qué problema resuelve?
+###  ¿Qué problema resuelve?
 
 Budget Buddy aborda varios desafíos comunes en la gestión financiera personal:
 
@@ -332,86 +333,6 @@ NODE_ENV=production
 GENERATE_SOURCEMAP=false
 COMPRESSION=gzip
 
-
-### Seguridad de Variables de Entorno
-
-**IMPORTANTE**: 
-- ❌ **NUNCA** subas el archivo .env a Git
-- ✅ El archivo .env está incluido en .gitignore
-- ✅ Usa .env.example como plantilla sin datos sensibles
-- ✅ En producción, configura las variables en tu plataforma de hosting (Vercel, Netlify, etc.)
-
-##  Estructura del Proyecto
-
-
-budget-buddy/
-├── build/                          # Archivos compilados (generados automáticamente)
-├── node_modules/                   # Dependencias (no incluido en Git)
-├── public/                         # Archivos públicos estáticos
-├── src/                           # Código fuente principal
-│   ├── css/                       # Estilos CSS
-│   │   └── style.css             # Estilos principales con Tailwind
-│   ├── images/                    # Recursos de imágenes
-│   │   ├── brand/                # Logos y branding
-│   │   ├── icons/                # Iconos SVG
-│   │   ├── logo/                 # Variantes del logo
-│   │   └── user/                 # Avatares de usuario
-│   ├── js/                       # JavaScript/lógica de aplicación
-│   │   ├── auth/                 # Autenticación y guards
-│   │   │   └── auth-guard.js    # Protección de rutas
-│   │   ├── components/           # Componentes reutilizables
-│   │   │   ├── charts/          # Componentes de gráficos
-│   │   │   ├── cards/           # Tarjetas de UI
-│   │   │   ├── calendar-init.js # Inicialización de calendario
-│   │   │   ├── dashboard-metrics.js # Métricas del dashboard
-│   │   │   ├── table-01.js      # Tabla de transacciones
-│   │   │   └── table-02.js      # Tabla financiera
-│   │   ├── config/              # Configuraciones
-│   │   │   └── api.js           # Configuración de API y endpoints
-│   │   ├── pages/               # Lógica por página
-│   │   │   ├── financialAdvice.js
-│   │   │   ├── graficos.js
-│   │   │   ├── landing.js
-│   │   │   ├── report.js
-│   │   │   ├── signIn.js
-│   │   │   ├── signUp.js
-│   │   │   └── transactions.js
-│   │   ├── services/            # Servicios de datos
-│   │   │   ├── adviceService.js
-│   │   │   ├── categoryService.js
-│   │   │   ├── pdfExportService.js  #  Exportación PDF
-│   │   │   ├── reportService.js
-│   │   │   ├── StorageService.js
-│   │   │   └── transactionService.js
-│   │   └── index.js             # Punto de entrada principal
-│   ├── partials/                # Componentes HTML reutilizables
-│   │   ├── header.html
-│   │   ├── sidebar.html
-│   │   ├── footer.html
-│   │   └── ...
-│   ├── 404.html                 # Página de error 404
-│   ├── index.html               # Dashboard principal
-│   ├── landing.html             # Página de inicio
-│   ├── signin.html              # Página de login
-│   ├── signup.html              # Página de registro
-│   ├── transactions.html        # Gestión de transacciones
-│   ├── report.html              # Reportes financieros
-│   └── ...
-├── .env                         # Variables de entorno (no incluido en Git)
-├── .env.example                 # Plantilla de variables de entorno
-├── .gitignore                   # Archivos ignorados por Git
-├── eslint.config.js            # Configuración de ESLint
-├── package.json                # Dependencias y scripts
-├── package-lock.json           # Lock de versiones de dependencias
-├── postcss.config.js           # Configuración de PostCSS
-├── webpack.config.js           # Configuración de Webpack
-├── vercel.json                 # Configuración de Vercel
-├── README.md                   # Este archivo
-├── EXPORT_PDF_FEATURE.md       # Documentación de exportación PDF
-├── IMPLEMENTATION_SUMMARY.md   # Resumen de implementación
-└── QUICK_START_PDF.md         # Guía rápida de PDF
-
-
 ##  Autenticación y Roles
 
 ### Flujo de Autenticación
@@ -588,22 +509,7 @@ Las transacciones pueden filtrarse por:
 -  Todos los componentes adaptados
 -  Sin parpadeo al cargar
 
-## Testing
-
-### Ejecutar Tests (Cuando están implementados)
-
-bash
-# Ejecutar todos los tests
-npm test
-
-# Ejecutar tests en modo watch
-npm run test:watch
-
-# Generar reporte de cobertura
-npm run test:coverage
-
-
-## 🚢 Deployment (Despliegue)
+##  Deployment (Despliegue)
 
 ### Despliegue en Vercel (Recomendado)
 
@@ -776,4 +682,3 @@ Este proyecto está bajo la licencia ISC. Ver el archivo LICENSE para más detal
   <p>Hecho con ❤ por el equipo de Budget Buddy</p>
   <p> 2025 Budget Buddy. Todos los derechos reservados.</p>
 </div>
-
