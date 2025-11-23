@@ -9,356 +9,182 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Settings | BudgetBuddy</title>
     <script>
-        window.currentPage = 'settings';
+      window.currentPage = 'settings';
+      const LOCAL_API = 'http://localhost:8081';
     </script>
   </head>
   <body
     data-page="settings"
     x-data="{
-          page: 'settings',
-          loaded: true, 
-          darkMode: false, 
-          stickyMenu: false, 
-          sidebarToggle: false, 
-          scrollTop: false,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-          passwordError: '',
-          passwordSuccess: false,
-          firstName: '',
-          lastName: '',
-          email: '',
-          bio: '',
-          role: 'USER',
-          profileError: '',
-          profileSuccess: false,
-          
-          init() {
-            this.darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
-            this.$watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
-            this.loadUserProfile();
-          },
-          
-          async loadUserProfile() {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            if (userInfo.fullName) {
-              const names = userInfo.fullName.split(' ');
-              this.firstName = names[0] || '';
-              this.lastName = names.slice(1).join(' ') || '';
-            }
-            this.email = userInfo.email || '';
-            this.bio = userInfo.bio || '';
-            this.role = userInfo.role || '';
-            
-            // Fetch complete profile from API to get role and bio
-            try {
-              const token = localStorage.getItem('jwtToken');
-              if (token) {
-                const response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/users/profile', {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': 'Bearer ' + token
-                  }
-                });
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  this.firstName = data.firstName || this.firstName;
-                  this.lastName = data.lastName || this.lastName;
-                  this.email = data.email || this.email;
-                  this.bio = data.bio || '';
-                  this.role = data.role || 'USER';
-                  
-                  // Update localStorage with complete info
-                  const updatedUserInfo = {
-                    fullName: this.firstName + ' ' + this.lastName,
-                    email: this.email,
-                    bio: this.bio,
-                    role: this.role
-                  };
-                  localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
-                }
-              }
-            } catch (error) {
-              console.error('Error loading profile:', error);
-            }
-          },
-          
-          async updateProfile() {
-            console.log('updateProfile called');
-            this.profileError = '';
-            this.profileSuccess = false;
-            
-            console.log('Data to update:', {
-              firstName: this.firstName,
-              lastName: this.lastName,
-              email: this.email,
-              bio: this.bio
-            });
-            
-            if (!this.firstName || !this.lastName) {
-              this.profileError = 'El nombre y apellido son requeridos.';
-              return;
-            }
-            
-            if (!this.email) {
-              this.profileError = 'El email es requerido.';
-              return;
-            }
-            
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(this.email)) {
-              this.profileError = 'Por favor ingresa un email válido.';
-              return;
-            }
-            
-            try {
-              const token = localStorage.getItem('jwtToken');
-              if (!token) {
-                this.profileError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
-                this.showNotification('Sesión expirada. Redirigiendo al login...', 'error');
-                setTimeout(() => {
-                  window.location.href = '/signin.html';
-                }, 2000);
-                return;
-              }
-              
-              console.log('Sending request to API...');
-              
-              let response;
-              try {
-                response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/users/profile', {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                  },
-                  body: JSON.stringify({
-                    firstName: this.firstName,
-                    lastName: this.lastName,
-                    email: this.email,
-                    bio: this.bio
-                  })
-                });
-                
-                console.log('Response received, status:', response.status);
-              } catch (fetchError) {
-                console.error('Fetch error:', fetchError);
-                response = null;
-              }
-              
-              if (!response || response.status === 404) {
-                console.log('API endpoint not available, updating localStorage only');
-                
-                const userInfo = {
-                  fullName: this.firstName + ' ' + this.lastName,
-                  email: this.email,
-                  bio: this.bio,
-                  role: this.role
-                };
-                localStorage.setItem('userInfo', JSON.stringify(userInfo));
-                
-                this.profileSuccess = true;
-                this.showNotification('Perfil actualizado exitosamente', 'success');
-                
-                setTimeout(() => {
-                  this.profileSuccess = false;
-                  window.location.reload();
-                }, 2000);
-                
-                return;
-              }
-              
-              if (response.ok) {
-                this.profileSuccess = true;
-                
-                const userInfo = {
-                  fullName: this.firstName + ' ' + this.lastName,
-                  email: this.email,
-                  bio: this.bio,
-                  role: this.role
-                };
-                localStorage.setItem('userInfo', JSON.stringify(userInfo));
-                
-                this.showNotification('Perfil actualizado exitosamente', 'success');
-                
-                if (typeof updateUserInfo === 'function') {
-                  updateUserInfo();
-                }
-                
-                setTimeout(() => {
-                  this.profileSuccess = false;
-                  window.location.reload();
-                }, 2000);
-              } else if (response.status === 401) {
-                this.profileError = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
-                this.showNotification('Sesión expirada. Redirigiendo al login...', 'error');
-                localStorage.removeItem('jwtToken');
-                localStorage.removeItem('userInfo');
-                setTimeout(() => {
-                  window.location.href = '/signin.html';
-                }, 2000);
-              } else {
-                const errorText = await response.text();
-                console.log('Error response:', errorText);
-                let errorMessage = 'Error al actualizar el perfil.';
-                
-                try {
-                  const data = JSON.parse(errorText);
-                  errorMessage = data.error || data.message || errorMessage;
-                } catch (e) {
-                  if (errorText) {
-                    errorMessage = errorText;
-                  }
-                }
-                
-                this.profileError = errorMessage;
-                this.showNotification('Error al actualizar el perfil', 'error');
-              }
-            } catch (error) {
-              console.error('Error actualizando perfil:', error);
-              console.error('Error details:', error.message);
-              if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                this.profileError = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
-                this.showNotification('Error de conexión', 'error');
-              } else {
-                this.profileError = 'Error de conexión. Verifica tu conexión a internet.';
-                this.showNotification('Error de conexión', 'error');
-              }
-            }
-          },
-          
-          getRoleLabel() {
-            const roles = {
-              'USER': 'Usuario',
-              'ADVISOR': 'Asesor Financiero',
-              'ADMIN': 'Administrador'
-            };
-            return roles[this.role] || 'Usuario';
-          },
-          
-          clearProfileMessages() {
-            this.profileError = '';
-            this.profileSuccess = false;
-          },
-          
-          async changePassword() {
-            this.passwordError = '';
-            this.passwordSuccess = false;
-            
-            if (this.newPassword !== this.confirmPassword) {
-              this.passwordError = 'Las contraseñas no coinciden.';
-              return;
-            }
-            
-            if (this.newPassword.length < 6) {
-              this.passwordError = 'La nueva contraseña debe tener al menos 6 caracteres.';
-              return;
-            }
-            
-            try {
+      page: 'settings',
+      loaded: true, 
+      darkMode: false, 
+      stickyMenu: false, 
+      sidebarToggle: false, 
+      scrollTop: false,
 
-              const token = localStorage.getItem('jwtToken');
-              if (!token) {
-                this.passwordError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
-                this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
-                setTimeout(() => {
-                  window.location.href = '/signin.html';
-                }, 2000);
-                return;
-              }
-              
-              const response = await fetch('https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/users/change-password', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  currentPassword: this.currentPassword,
-                  newPassword: this.newPassword
-                })
-              });
-              
-              if (response.ok) {
-                this.passwordSuccess = true;
-                this.currentPassword = '';
-                this.newPassword = '';
-                this.confirmPassword = '';
-                this.showNotification('Contraseña cambiada exitosamente', 'success');
-                
-                setTimeout(() => {
-                  this.passwordSuccess = false;
-                }, 5000);
-              } else if (response.status === 401) {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+      passwordError: '',
+      passwordSuccess: false,
 
-                this.passwordError = 'Tu sesión ha expiado. Por favor, inicia sesión nuevamente.';
-                this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
-                localStorage.removeItem('jwtToken');
-                localStorage.removeItem('userInfo');
-                setTimeout(() => {
-                  window.location.href = '/signin.html';
-                }, 2000);
-              } else if (response.status === 404) {
-                // Endpoint no encontrado
-                this.passwordError = 'La funcionalidad de cambio de contraseña no está disponible en este momento.';
-                this.showNotification('Funcionalidad no disponible', 'error');
-              } else {
-                const errorText = await response.text();
-                let errorMessage = 'Error al cambiar la contraseña.';
-                
-                try {
-                  const data = JSON.parse(errorText);
-                  errorMessage = data.error || data.message || errorMessage;
-                } catch (e) {
+      showCurrent: false,
+      showNew: false,
+      showConfirm: false,
 
-                  if (errorText) {
-                    errorMessage = errorText;
-                  }
-                }
-                
-                this.passwordError = errorMessage;
-                this.showNotification('Error al cambiar la contraseña', 'error');
-              }
-            } catch (error) {
-              console.error('Error cambiando contraseña:', error);
-              if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                this.passwordError = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
-                this.showNotification('Error de conexión', 'error');
-              } else {
-                this.passwordError = 'Error de conexión. Verifica tu conexión a internet.';
-                this.showNotification('Error de conexión', 'error');
-              }
-            }
-          },
+      async init() {
+        // dark mode
+        this.darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
+        this.$watch('darkMode', value => 
+          localStorage.setItem('darkMode', JSON.stringify(value))
+        );
+
+        // validar token antes de seguir
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+          window.location.href = './signin.html';
+          return;
+        }
+      },
+
+      async changePassword() {
+        this.passwordError = '';
+        this.passwordSuccess = false;
+        
+        if (this.newPassword !== this.confirmPassword) {
+          this.passwordError = 'Las contraseñas no coinciden.';
+          return;
+        }
+        
+        if (this.newPassword.length < 6) {
+          this.passwordError = 'La nueva contraseña debe tener al menos 6 caracteres.';
+          return;
+        }
+        
+        try {
+          const token = localStorage.getItem('jwtToken');
+          if (!token) {
+            this.passwordError = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
+            this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
+            setTimeout(() => {
+              window.location.href = '/signin.html';
+            }, 2000);
+            return;
+          }
           
-          logout() {
-            localStorage.removeItem('jwtToken');
-            window.location.href = './signin.html';
-          },
+          const response = await fetch(`${LOCAL_API}/users/change-password`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              currentPassword: this.currentPassword,
+              newPassword: this.newPassword
+            })
+          });
           
-          showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-              type === 'success' ? 'bg-green-500 text-white' :
-              type === 'error' ? 'bg-red-500 text-white' :
-              'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
+          if (response.ok) {
+            this.passwordSuccess = true;
+            this.currentPassword = '';
+            this.newPassword = '';
+            this.confirmPassword = '';
+            this.showNotification('Contraseña cambiada exitosamente', 'success');
             
             setTimeout(() => {
-              notification.remove();
-            }, 3000);
-          },
-          
-          clearMessages() {
-            this.passwordError = '';
-            this.passwordSuccess = false;
+              this.passwordSuccess = false;
+            }, 5000);
+          } else if (response.status === 401) {
+            this.passwordError = 'Tu sesión ha expiado. Por favor, inicia sesión nuevamente.';
+            this.showNotification('Sesión expiada. Redirigiendo al login...', 'error');
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userInfo');
+            setTimeout(() => {
+              window.location.href = '/signin.html';
+            }, 2000);
+          } else if (response.status === 404) {
+            this.passwordError = 'La funcionalidad de cambio de contraseña no está disponible en este momento.';
+            this.showNotification('Funcionalidad no disponible', 'error');
+          } else {
+            const errorText = await response.text();
+            let errorMessage = 'Error al cambiar la contraseña.';
+            
+            try {
+              const data = JSON.parse(errorText);
+              errorMessage = data.error || data.message || errorMessage;
+            } catch (e) {
+              if (errorText) {
+                errorMessage = errorText;
+              }
+            }
+            
+            this.passwordError = errorMessage;
+            this.showNotification('Error al cambiar la contraseña', 'error');
           }
-        }"
+        } catch (error) {
+          console.error('Error cambiando contraseña:', error);
+          if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+            this.passwordError = 'No se puede conectar con el servidor. Verifica tu conexión a internet.';
+            this.showNotification('Error de conexión', 'error');
+          } else {
+            this.passwordError = 'Error de conexión. Verifica tu conexión a internet.';
+            this.showNotification('Error de conexión', 'error');
+          }
+        }
+      },
+
+      logout() {
+        localStorage.removeItem('jwtToken');
+        window.location.href = './signin.html';
+      },
+      
+      showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+          type === 'success' ? 'bg-green-500 text-white' :
+          type === 'error' ? 'bg-red-500 text-white' :
+          'bg-blue-500 text-white'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      },
+      
+      clearMessages() {
+        this.passwordError = '';
+        this.passwordSuccess = false;
+      },
+
+      togglePassword(field) {
+        let ref = null;
+        let state = null;
+
+        if (field === 'current') {
+          ref = this.$refs.currentPass;
+          this.showCurrent = !this.showCurrent;
+          state = this.showCurrent;
+        }
+        if (field === 'new') {
+          ref = this.$refs.newPass;
+          this.showNew = !this.showNew;
+          state = this.showNew;
+        }
+        if (field === 'confirm') {
+          ref = this.$refs.confirmPass;
+          this.showConfirm = !this.showConfirm;
+          state = this.showConfirm;
+        }
+
+        if (ref) {
+          ref.type = state ? 'text' : 'password';
+        }
+      }
+    }"
     x-init="init()"
     :class="{'dark bg-gray-900': darkMode === true}"
   >
@@ -386,212 +212,249 @@
 
         <!-- ===== Main Content Start ===== -->
         <main>
-          <div class="p-4 md:ml-[15px] mt-4">
-            <div class="mb-1">
-              <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-                Settings
-              </h2>
-              <span class="text-lg font-normal text-gray-500 dark:text-gray-400">
-                Manage your account and preferences
-              </span>
+          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            
+            <!-- Breadcrumb Start -->
+            <div x-data="{ pageName: `Settings` }">
+              <include src="./partials/breadcrumb.html" />
             </div>
-          </div>
+            <!-- Breadcrumb End -->
 
-          <!-- Content -->
-          <div class="p-4 mx-auto max-w-2xl md:p-6">
-            <!-- Profile Information Section -->
-            <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Profile Information</h3>
-                <span 
-                  class="px-3 py-1 text-xs font-medium rounded-full"
-                  :class="{
-                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': role === 'USER',
-                    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': role === 'ADVISOR',
-                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': role === 'ADMIN'
-                  }"
-                  x-text="getRoleLabel()"
-                ></span>
-              </div>
+            <!-- ===== Contenedor principal ===== -->
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
               
-              <form @submit.prevent="updateProfile" class="space-y-4">
-                <!-- Personal Information -->
-                <div class="space-y-4">
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        First Name <span class="text-red-500">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        x-model="firstName" 
-                        required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                        placeholder="Enter your first name"
-                        @input="clearProfileMessages()"
-                      />
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Last Name <span class="text-red-500">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        x-model="lastName" 
-                        required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                        placeholder="Enter your last name"
-                        @input="clearProfileMessages()"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email <span class="text-red-500">*</span>
-                    </label>
-                    <input 
-                      type="email" 
-                      x-model="email" 
-                      required 
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Enter your email"
-                      @input="clearProfileMessages()"
+              <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
+                Account Settings
+              </h3>
+
+              <!-- === Card: Change Password  === -->
+              <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+                <h4 class="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
+                  Change Password
+                </h4>
+
+                <div class="grid grid-cols-1 gap-5">
+
+                <div class="flex flex-col">
+                  <label class="mb-1 text-xs text-gray-500 dark:text-gray-400">Current Password</label>
+
+                  <div class="relative">
+                    <input
+                      x-ref="currentPass"
+                      type="password"
+                      x-model="currentPassword"
+                      placeholder="Enter your current password"
+                      @input="clearMessages()"
+                      class="h-11 w-full rounded-lg border border-gray-300 appearance-none px-4 py-2.5 text-sm shadow-theme-xs 
+                      placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300
+                      dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500
+                      dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
                     />
-                  </div>
-                  
-                  <!-- Biography Section -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Biography / Description
-                    </label>
-                    <textarea 
-                      x-model="bio" 
-                      rows="4"
-                      maxlength="500"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                      placeholder="Tell us a little about yourself... (optional, max 500 characters)"
-                      @input="clearProfileMessages()"
-                    ></textarea>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="`${bio.length}/500 characters`"></p>
+
+                    <button
+                      type="button"
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                      @click="
+                        showCurrent = !showCurrent;
+                        $refs.currentPass.type = showCurrent ? 'text' : 'password';
+                      "
+                    >
+                      <!-- ojo abierto -->
+                      <svg x-show="showCurrent" class="w-5 h-5" fill="none" stroke="currentColor"
+                          viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943
+                          9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                      </svg>
+
+                      <!-- ojo cerrado -->
+                      <svg x-show="!showCurrent" class="w-5 h-5" fill="none" stroke="currentColor"
+                          viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.973 9.973 0 012.541-4.362"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6.18 6.18A9.99 9.99 0 0112 5c4.478 0 8.268 2.943
+                          9.542 7a9.956 9.956 0 01-4.043 5.197"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 3l18 18"/>
+                      </svg>
+                    </button>
+
                   </div>
                 </div>
-                
-                <template x-if="profileError">
-                  <div class="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800" x-text="profileError"></div>
-                </template>
-                <template x-if="profileSuccess">
-                  <div class="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <div class="flex items-center">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Profile updated successfully!</span>
-                    </div>
-                  </div>
-                </template>
-                
-                <div class="flex justify-end pt-2">
-                  <button 
-                    type="submit" 
-                    class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+
+                <div class="flex flex-col">
+                  <label class="mb-1 text-xs text-gray-500 dark:text-gray-400">New Password</label>
+
+                  <div class="relative">
+                    <input
+                      x-ref="newPass"
+                      type="password"
+                      x-model="newPassword"
+                      placeholder="Minimum 6 characters"
+                      @input="clearMessages()"
+                      class="h-11 w-full rounded-lg border border-gray-300 appearance-none px-4 py-2.5 text-sm shadow-theme-xs 
+                      placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300
+                      dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500
+                      dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
+                    />
+
+                  <button
+                    type="button"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                    @click="
+                      showNew = !showNew;
+                      $refs.newPass.type = showNew ? 'text' : 'password';
+                    "
                   >
-                    Save Changes
+                    <svg x-show="showNew" class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943
+                        9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+
+                    <svg x-show="!showNew" class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.973 9.973 0 012.541-4.362"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6.18 6.18A9.99 9.99 0 0112 5c4.478 0 8.268 2.943
+                        9.542 7a9.956 9.956 0 01-4.043 5.197"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 3l18 18"/>
+                    </svg>
+                  </button>
+
+                  </div>
+                </div>
+
+                <div class="flex flex-col">
+                  <label class="mb-1 text-xs text-gray-500 dark:text-gray-400">Confirm New Password</label>
+
+                  <div class="relative">
+                    <input
+                      x-ref="confirmPass"
+                      type="password"
+                      x-model="confirmPassword"
+                      placeholder="Repeat the new password"
+                      @input="clearMessages()"
+                      class="h-11 w-full rounded-lg border border-gray-300 appearance-none px-4 py-2.5 text-sm shadow-theme-xs 
+                      placeholder:text-gray-400 focus:outline-none focus:border-brand-300 focus:ring focus:ring-brand-300
+                      dark:focus:outline-none dark:focus:border-brand-500 dark:focus:ring dark:focus:ring-brand-500
+                      dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"
+                    />
+
+                  <button
+                    type="button"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                    @click="
+                      showConfirm = !showConfirm;
+                      $refs.confirmPass.type = showConfirm ? 'text' : 'password';
+                    "
+                  >
+                    <svg x-show="showConfirm" class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943
+                        9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+
+                    <svg x-show="!showConfirm" class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.973 9.973 0 012.541-4.362"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6.18 6.18A9.99 9.99 0 0112 5c4.478 0 8.268 2.943
+                        9.542 7a9.956 9.956 0 01-4.043 5.197"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 3l18 18"/>
+                    </svg>
+                  </button>
+
+                  </div>
+                </div>
+
+                </div>
+
+                <!-- Mensajes -->
+              <template x-if="passwordError">
+                <p class="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg dark:bg-red-900/20 dark:border-red-800"
+                  x-text="passwordError"></p>
+              </template>
+
+              <template x-if="passwordSuccess">
+                <div
+                  class="mt-4 flex items-center gap-3 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-xl shadow-sm dark:bg-green-900/20 dark:border-green-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0L3.293 9.207a1 1 0 011.414-1.414l4.043 4.043 6.543-6.543a1 1 0 011.414 0z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <span>Password updated successfully!</span>
+                </div>
+              </template>
+
+                <div class="mt-6 flex justify-end">
+                  <button
+                    @click="changePassword()"
+                    class="inline-flex items-center justify-center rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 dark:bg-brand-500 dark:hover:bg-brand-600">
+                    Update Password
                   </button>
                 </div>
-              </form>
-            </div>
+              </div>
 
-            <!-- Change Password Section -->
-            <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Change password</h3>
-              <form @submit.prevent="changePassword" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current password</label>
-                  <input 
-                    type="password" 
-                    x-model="currentPassword" 
-                    required 
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter your current password"
-                    @input="clearMessages()"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New password</label>
-                  <input 
-                    type="password" 
-                    x-model="newPassword" 
-                    required 
-                    minlength="6" 
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Minimum 6 characters"
-                    @input="clearMessages()"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm new password</label>
-                  <input 
-                    type="password" 
-                    x-model="confirmPassword" 
-                    required 
-                    minlength="6" 
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Repeat the new password"
-                    @input="clearMessages()"
-                  />
-                </div>
-                <template x-if="passwordError">
-                  <div class="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg" x-text="passwordError"></div>
-                </template>
-                <template x-if="passwordSuccess">
-                  <div class="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                    <div class="flex items-center">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Password changed successfully!</span>
+              <!-- === Card: Theme === -->
+              <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+                <h4 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
+                  Theme
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Switch between light and dark theme</p>
+
+                <div class="mt-6 flex justify-end">
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="darkMode" class="sr-only peer" />
+                    <div
+                      class="relative w-16 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                      peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer 
+                      dark:bg-gray-700 
+                      peer-checked:after:translate-x-full peer-checked:after:border-white 
+                      after:content-[''] after:absolute after:top-[3px] after:left-[3px] 
+                      after:bg-white after:border-gray-300 after:border after:rounded-full 
+                      after:h-7 after:w-7 after:transition-all dark:border-gray-600 
+                      peer-checked:bg-blue-600">
                     </div>
-                  </div>
-                </template>
-                <button 
-                  type="submit" 
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  Change password
-                </button>
-              </form>
-            </div>
-
-            <div class="mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Theme</h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Switch between light and dark theme</p>
+                  </label>
                 </div>
-                <label class="inline-flex items-center cursor-pointer">
-                  <input type="checkbox" x-model="darkMode" class="sr-only peer" />
-                  <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
+
               </div>
-            </div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Sign out</h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Close your current session</p>
-                </div>
-                <button 
-                  @click="logout" 
-                  class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  Sign out
+              <!-- === Card: Logout === -->
+              <div class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+                <h4 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
+                  Session
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Close your current session</p>
+
+              <div class="mt-6 flex justify-end">
+                <button
+                  @click="logout()"
+                  class="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]">
+                  Log Out
                 </button>
               </div>
+
             </div>
           </div>
         </main>
+
         <!-- ===== Main Content End ===== -->
       </div>
       <!-- ===== Content Area End ===== -->
@@ -599,55 +462,54 @@
     <!-- ===== Page Wrapper End ===== -->
   </body>
   
-<script>
-// check token
-function checkAuth() {
-  const token = localStorage.getItem("jwtToken");
-  if (!token) {
-    if (isProtectedPage()) {
-      window.location.href = "./signin.html";
-    }
-    return;
-  }
-
-  fetch("https://pnc-proyecto-final-grupo-02-s01-aqoh.onrender.com/auth/verify", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Token inválido");
-      return res.json();
-    })
-    .then((data) => {
-      if (data.valid) {
-        const user = data.user;
-
-        if (user.role === "ADVISOR" && isProtectedPage() && getCurrentPage() !== "settings.html") {
-          window.location.href = "./index.html";
-          return;
-        }
-
-        // save users info if not 
-        if (!localStorage.getItem("userInfo")) {
-          const userInfo = {
-            fullName: user.firstName + " " + user.lastName,
-            email: user.email,
-          };
-          localStorage.setItem("userInfo", JSON.stringify(userInfo));
-        }
-
-        updateUserInfo(); //show in header
-      } else {
-        throw new Error("Token inválido");
+  <script>
+  // check token contra backend local
+  function checkAuth() {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      if (isProtectedPage()) {
+        window.location.href = "./signin.html";
       }
+      return;
+    }
+
+    fetch(`${LOCAL_API}/auth/verify`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
-    .catch((err) => {
-      console.error("Auth error:", err.message);
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("userInfo");
-      window.location.href = "./signin.html";
-    });
-}
-</script>
-</html> 
+      .then((res) => {
+        if (!res.ok) throw new Error("Token inválido");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.valid) {
+          const user = data.user;
+
+          if (user.role === "ADVISOR" && isProtectedPage() && getCurrentPage() !== "settings.html") {
+            window.location.href = "./index.html";
+            return;
+          }
+
+          if (!localStorage.getItem("userInfo")) {
+            const userInfo = {
+              fullName: user.firstName + " " + user.lastName,
+              email: user.email,
+            };
+            localStorage.setItem("userInfo", JSON.stringify(userInfo));
+          }
+
+          updateUserInfo();
+        } else {
+          throw new Error("Token inválido");
+        }
+      })
+      .catch((err) => {
+        console.error("Auth error:", err.message);
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        window.location.href = "./signin.html";
+      });
+  }
+  </script>
+</html>
