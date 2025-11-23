@@ -805,7 +805,7 @@
         //Fuente de verdad: consultar el perfil del usuario autenticado
         // para obtener el rol actual. Si falla, hacemos fallback al token.
         try {
-          const resp = await fetch('http://localhost:8081/users/profile', {
+          const resp = await fetch('https://backend-proyecto-28x9.onrender.com/users/profile', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` }
           });
           if (resp.ok) {
